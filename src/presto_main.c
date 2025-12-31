@@ -338,7 +338,12 @@ int main(int argc, char **argv) {
             int macro_status = run_macro(args.output_macro, file, trials, &result);
             
             if (macro_status != 0) {
-                fprintf(stderr, "Error: Macro %d failed for %s\n", args.output_macro, filepath);
+                fprintf(stderr, "Error: Unknown macro -o%d\n\n", args.output_macro);
+                fprintf(stderr, "Available text macros:\n");
+                for (int i = 0; macros[i].name != NULL; i++) {
+                    fprintf(stderr, "  -o%d  %s\n", macros[i].id, macros[i].description);
+                }
+                fprintf(stderr, "\nUse '%s -M' to list all macros.\n", argv[0]);
                 status = 1;
             } else {
                 /* Output result */
