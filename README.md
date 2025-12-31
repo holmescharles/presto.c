@@ -55,6 +55,13 @@ make
 - **Macro 4** (`-o4`): Analog data info
 - **Macro 5** (`-o5`): Error counts per condition
 
+### Graphical Macros
+
+- **Macro 1** (`-g1`): Analog data plots (Eye, Mouse, Button signals)
+- **Macro 2** (`-g2`): Timeline histogram (Trial distribution over time)
+
+**Requirements**: Graphical macros require `gnuplot` to be installed.
+
 ### Trial Filtering
 
 PRESTO supports powerful trial filtering syntax:
@@ -139,6 +146,19 @@ PRESTO supports powerful trial filtering syntax:
 ./bin/presto -o3 data.bhv2
 ```
 
+### Graphical Output
+
+```bash
+# Generate analog data plots (Eye, Mouse, Button signals)
+./bin/presto -g1 data.bhv2
+
+# Generate timeline histogram
+./bin/presto -g2 data.bhv2
+
+# Save plots to specific directory
+./bin/presto -g1 -O results/ data.bhv2
+```
+
 ### Multiple Files with Output Directory
 
 ```bash
@@ -158,6 +178,19 @@ PRESTO supports powerful trial filtering syntax:
 - C11 compiler (gcc or clang)
 - POSIX system (Linux, macOS, BSD)
 - make
+- gnuplot (optional, required only for graphical macros `-g1`, `-g2`)
+
+**Installing gnuplot:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install gnuplot
+
+# macOS
+brew install gnuplot
+
+# Fedora/RHEL
+sudo dnf install gnuplot
+```
 
 ### Compile
 
@@ -249,12 +282,10 @@ See [tests/README.md](tests/README.md) for details.
 
 - **bhvq query mode** - The jq-like query interface is not yet implemented in C
   - Use the Python version for query mode: https://github.com/MooshLab/presto
-- **Graphical macros** (`-g1`, `-g2`) - Plotting macros are stubs
 
 ### Workarounds
 
 - For bhvq query functionality, use the Python implementation
-- For plotting, export data and use external tools (matplotlib, R, etc.)
 
 ---
 
@@ -266,11 +297,9 @@ A full-featured Python implementation with bhvq query mode and graphical macros 
 
 **When to use Python version:**
 - Need bhvq jq-like query syntax
-- Need graphical plotting macros
-- Prefer pip installation
 
 **When to use C version:**
-- Want zero dependencies
+- Want zero dependencies (except gnuplot for plotting)
 - Need maximum speed
 - Prefer grab-style API
 - Building custom tools
@@ -309,7 +338,7 @@ Trial filtering:
 
 Output:
   -o<N>       Text output macro (default: 0)
-  -g<N>       Graphical output macro (not yet implemented)
+  -g<N>       Graphical output macro (requires gnuplot)
   -O <dir>    Output directory ('-' for stdout)
   -f          Force overwrite existing files
 
@@ -343,6 +372,10 @@ Spec format: N (single), N:M (range), N,M,O (union)
 
 # Pipe to grep for specific subject
 ./bin/presto -O - -o1 *.bhv2 | grep Subject05
+
+# Generate plots
+./bin/presto -g1 data.bhv2
+./bin/presto -g2 -O results/ data.bhv2
 ```
 
 ---

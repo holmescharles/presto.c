@@ -32,6 +32,7 @@
 #include "bhv2.h"
 #include "presto_filter.h"
 #include "presto_macros.h"
+#include "presto_plot.h"
 
 #define PRESTO_VERSION "0.1.0"
 
@@ -330,8 +331,12 @@ int main(int argc, char **argv) {
         /* Run the appropriate macro */
         if (args.graph_macro >= 0) {
             /* Graphical output */
-            fprintf(stderr, "Graphical macros not yet implemented\n");
-            status = 1;
+            const char *output_path = args.output_dir ? args.output_dir : ".";
+            int plot_status = run_plot_macro(args.graph_macro, file, trials, filepath, output_path);
+            if (plot_status != 0) {
+                fprintf(stderr, "Error: Plot generation failed\n");
+                status = 1;
+            }
         } else {
             /* Text output */
             macro_result_t result;

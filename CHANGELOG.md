@@ -6,6 +6,24 @@ All notable changes to presto.c are documented here.
 
 ## [Unreleased]
 
+### Added (main branch)
+
+- **Graphical macros using gnuplot** - Plotting functionality now implemented
+  - **Macro 1** (`-g1`) - Analog data plots
+    - Multi-page PDF with one trial per page
+    - Three subplots per trial: Eye position (X/Y), Mouse position (X/Y), Button states
+    - Auto-detects available analog data (Eye, Mouse, Buttons)
+    - Title shows trial number, block, condition, and error code
+  - **Macro 2** (`-g2`) - Timeline histogram
+    - Single-page PDF showing trial distribution over time
+    - X-axis: Time in minutes since experiment start
+    - Y-axis: Number of trials per bin (20 bins, adaptive)
+    - Info label shows total trials and experiment duration
+  - **Dependencies**: Requires gnuplot (6.0+ tested, older versions likely work)
+  - **Architecture**: C code generates tab-delimited data files and gnuplot scripts, executes gnuplot, cleans up temp files
+  - **Output formats**: PDF files (format: `AnalogData_<filename>.pdf`, `Timeline_<filename>.pdf`)
+  - **Limitations**: Stdout output (`-O -`) not yet implemented for plots
+
 ### Added (c-port branch)
 
 - **Pure C implementation** of presto behavioral data analyzer
@@ -106,17 +124,22 @@ Features from Python version not yet in C version:
   - Code stubs present in `src/bhvq_*.c` but incomplete
   - Use Python version for query functionality: https://github.com/MooshLab/presto
 
-- **Graphical macros** (`-g1`, `-g2`) - Plotting functionality
-  - Stub present in `src/presto_plot.c`
-  - Use external tools (Python matplotlib, R, etc.) for plotting
+- **Plot stdout output** (`-O -` for graphical macros)
+  - Requires capturing gnuplot PDF output to buffer
+  - Use file output instead: `-O results/` or default working directory
+
+- **Advanced plot customization**
+  - Python version has: `-og` (grid toggle), `-as2` (alignment), `-ob 1,2,4` (button selection)
+  - C version auto-detects and plots all available data
 
 ### Note
 
-- This C implementation is being developed on the `c-port` branch
+- This C implementation was developed on the `c-port` branch and merged to `main`
+- Graphical macros added to `main` branch
 - Python implementation available as separate repository
 - Both versions read the same BHV2 format and produce compatible output
-- C version prioritizes speed and zero dependencies
-- Python version prioritizes feature completeness (bhvq, plotting)
+- C version prioritizes speed and minimal dependencies (zero dependencies for text macros, gnuplot for graphical macros)
+- Python version prioritizes feature completeness (bhvq, advanced plotting customization)
 
 ---
 
