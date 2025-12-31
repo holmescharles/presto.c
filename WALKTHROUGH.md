@@ -19,7 +19,7 @@ tracing through the code path for common operations.
     ├── bhvq_query.c      # Pattern matching, glob expansion
     ├── bhvq_json.h       # JSON output API
     ├── bhvq_json.c       # JSON serialization
-    ├── presto_main.c     # presto CLI entry point
+    ├── main.c            # presto CLI entry point
     ├── presto_filter.h   # Trial filtering API
     ├── presto_filter.c   # Filter parsing and application
     ├── presto_macros.h   # Text macro API
@@ -222,7 +222,7 @@ bhvq has been temporarily disabled during the streaming refactor. When re-enable
 # -o1   = behavior summary macro
 ```
 
-### Main Function Flow (presto_main.c)
+### Main Function Flow (main.c)
 
 ```c
 int main(int argc, char **argv) {
@@ -289,10 +289,10 @@ int main(int argc, char **argv) {
 
 Key difference from the old version: we stream through the file, reading trial names but only keeping the data for trials that pass the filters. Variables we don't need (like ScreenInfo, ITI, etc.) are skipped entirely.
 
-### Argument Parsing (presto_main.c)
+### Argument Parsing (main.c)
 
 ```c
-// presto_main.c:~120
+// main.c:~120
 static int parse_args(int argc, char **argv, presto_args_t *args) {
     args_init(args);  // Set defaults
     
@@ -609,7 +609,7 @@ int run_macro(int macro_id, ...) {
 }
 ```
 
-### 4. Add to help text in presto_main.c
+### 4. Add to help text in main.c
 
 ```c
 static macro_info_t macros[] = {

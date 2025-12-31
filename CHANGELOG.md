@@ -8,6 +8,12 @@ All notable changes to presto.c are documented here.
 
 ### Changed (main branch)
 
+- **Renamed main entry point for consistency** - Removed `presto_` prefix from entry point
+  - Renamed `presto_main.c` → `main.c`
+  - Completes the file naming cleanup for maximum consistency
+  - All implementation files now have no prefix: `bhv2.c`, `main.c`, `skip.c`, `macros.c`, `plot.c`
+  - Updated Makefile, README.md, and WALKTHROUGH.md
+
 - **Refactored filter system to grab-style "skip" naming** - Aligns with grab tool conventions
   - Renamed `filter.c/.h` → `skip.c/.h`
   - All types renamed: `filter_*` → `skip_*`
@@ -30,7 +36,7 @@ All notable changes to presto.c are documented here.
   - `presto_filter.c/.h` → `filter.c/.h` (now `skip.c/.h` as of latest refactor)
   - `presto_macros.c/.h` → `macros.c/.h`
   - `presto_plot.c/.h` → `plot.c/.h`
-  - Kept `presto_main.c` as entry point
+  - `presto_main.c` → `main.c` (completed in subsequent refactor)
   - Updated all includes and Makefile
   - Cleaner, more focused project structure
 
