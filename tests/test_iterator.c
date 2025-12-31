@@ -3,7 +3,7 @@
  */
 
 #include <stdio.h>
-#include "src/bhv2.h"
+#include "../src/bhv2.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
