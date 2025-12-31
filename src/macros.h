@@ -42,7 +42,7 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...);
 int run_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
 
 /*
- * Individual macros
+ * Individual macros (implementations in src/macros/)
  */
 
 /* Macro 0: Count trials */

@@ -14,8 +14,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libgen.h>
-#include "bhv2.h"
-#include "skip.h"
+#include "../bhv2.h"
+#include "../skip.h"
 #include "plot.h"
 
 /* Data structures for plotting */

@@ -12,7 +12,7 @@
 #   gcc -o debug_vars tests/debug_vars.c obj/bhv2.o -lm
 
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2 -g
+CFLAGS = -Wall -Wextra -std=c11 -O2 -g -I$(SRCDIR)
 LDFLAGS = -lm
 
 # Cairo for plotting (presto only)
@@ -22,14 +22,31 @@ CAIRO_LDFLAGS = $(shell pkg-config --libs cairo 2>/dev/null)
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
+MACRODIR = $(SRCDIR)/macros
 
 # Source files
 BHV2_SRC = $(SRCDIR)/bhv2.c
-PRESTO_SRC = $(SRCDIR)/main.c $(SRCDIR)/skip.c $(SRCDIR)/macros.c $(SRCDIR)/plot.c
+PRESTO_SRC = $(SRCDIR)/main.c $(SRCDIR)/skip.c $(SRCDIR)/macros.c
+
+# Macro implementation files (in src/macros/)
+MACRO_SRC = $(MACRODIR)/count.c \
+            $(MACRODIR)/behavior.c \
+            $(MACRODIR)/errors.c \
+            $(MACRODIR)/scenes.c \
+            $(MACRODIR)/analog.c \
+            $(MACRODIR)/errorcounts.c \
+            $(MACRODIR)/plot.c
 
 # Object files
 BHV2_OBJ = $(OBJDIR)/bhv2.o
-PRESTO_OBJ = $(OBJDIR)/main.o $(OBJDIR)/skip.o $(OBJDIR)/macros.o $(OBJDIR)/plot.o
+PRESTO_OBJ = $(OBJDIR)/main.o $(OBJDIR)/skip.o $(OBJDIR)/macros.o
+MACRO_OBJ = $(OBJDIR)/macro_count.o \
+            $(OBJDIR)/macro_behavior.o \
+            $(OBJDIR)/macro_errors.o \
+            $(OBJDIR)/macro_scenes.o \
+            $(OBJDIR)/macro_analog.o \
+            $(OBJDIR)/macro_errorcounts.o \
+            $(OBJDIR)/macro_plot.o
 
 # Targets
 PRESTO = $(BINDIR)/presto
@@ -40,14 +57,34 @@ all: presto
 
 presto: $(PRESTO)
 
-$(PRESTO): $(BHV2_OBJ) $(PRESTO_OBJ) | $(BINDIR)
+$(PRESTO): $(BHV2_OBJ) $(PRESTO_OBJ) $(MACRO_OBJ) | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CAIRO_LDFLAGS)
 
+# Core source files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+# Macro implementation files (prefix with macro_ to avoid conflicts)
+$(OBJDIR)/macro_count.o: $(MACRODIR)/count.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/macro_behavior.o: $(MACRODIR)/behavior.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/macro_errors.o: $(MACRODIR)/errors.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/macro_scenes.o: $(MACRODIR)/scenes.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/macro_analog.o: $(MACRODIR)/analog.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/macro_errorcounts.o: $(MACRODIR)/errorcounts.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 # Plot needs Cairo
-$(OBJDIR)/plot.o: $(SRCDIR)/plot.c | $(OBJDIR)
+$(OBJDIR)/macro_plot.o: $(MACRODIR)/plot.c | $(OBJDIR)
 	$(CC) $(CFLAGS) $(CAIRO_CFLAGS) -c -o $@ $<
 
 $(OBJDIR):

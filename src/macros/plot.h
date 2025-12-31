@@ -5,8 +5,8 @@
 #ifndef PRESTO_PLOT_H
 #define PRESTO_PLOT_H
 
-#include "bhv2.h"
-#include "skip.h"
+#include "../bhv2.h"
+#include "../skip.h"
 
 /*
  * Run graphical macro

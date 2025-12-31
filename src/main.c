@@ -32,7 +32,7 @@
 #include "bhv2.h"
 #include "skip.h"
 #include "macros.h"
-#include "plot.h"
+#include "macros/plot.h"
 
 #define PRESTO_VERSION "0.1.0"
 
