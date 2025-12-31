@@ -1,5 +1,17 @@
 # Makefile for presto-c
-# Builds bhvq and presto CLI tools
+# Pure C implementation of presto behavioral data analyzer
+#
+# Targets:
+#   make          - Build presto binary (default)
+#   make clean    - Remove build artifacts (obj/, bin/)
+#   make test     - Run basic test (requires test data)
+#   make check    - Quick compile check
+#
+# Test programs (compile manually):
+#   gcc -o test_iterator tests/test_iterator.c obj/bhv2.o -lm
+#   gcc -o debug_vars tests/debug_vars.c obj/bhv2.o -lm
+#
+# Note: bhvq query mode not yet implemented (stubs in src/bhvq_*.c)
 
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -g

@@ -1,0 +1,17 @@
+# Build artifacts
+*.o
+*.a
+*.so
+bin/
+obj/
+
+# Test binaries
+test_iterator
+debug_vars
+
+# Editor/OS
+*.swp
+*~
+.DS_Store
+.vscode/
+.idea/

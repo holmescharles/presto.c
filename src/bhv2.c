@@ -10,6 +10,7 @@
 #include "bhv2.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>    /* isdigit */
 #include <fcntl.h>    /* open */
 #include <unistd.h>   /* lseek, close */
 #include <sys/stat.h> /* fstat */
@@ -358,9 +359,15 @@ static int skip_array_data_posix(int file_descriptor, matlab_dtype_t dtype, uint
         uint64_t n_fields;
         if (read_uint64_posix(file_descriptor, &n_fields) < 0) return -1;
 
-        /* Skip each element's fields */
+        /* Skip each element's fields (names + values) */
         for (uint64_t elem = 0; elem < total; elem++) {
             for (uint64_t f = 0; f < n_fields; f++) {
+                /* Skip field name length and name */
+                uint64_t name_len;
+                if (read_uint64_posix(file_descriptor, &name_len) < 0) return -1;
+                skip_bytes_posix(file_descriptor, name_len);
+                
+                /* Skip field value */
                 if (bhv2_skip_value_posix(file_descriptor) < 0) return -1;
             }
         }
@@ -368,8 +375,14 @@ static int skip_array_data_posix(int file_descriptor, matlab_dtype_t dtype, uint
     }
 
     if (dtype == MATLAB_CELL) {
-        /* Skip each cell element */
+        /* Skip each cell element (which has name prefix) */
         for (uint64_t i = 0; i < total; i++) {
+            /* Cell elements have format: [name_len][name][dtype][dims][data] */
+            uint64_t name_len;
+            if (read_uint64_posix(file_descriptor, &name_len) < 0) return -1;
+            skip_bytes_posix(file_descriptor, name_len);
+            
+            /* Now skip the actual value */
             if (bhv2_skip_value_posix(file_descriptor) < 0) return -1;
         }
         return 0;
@@ -842,4 +855,151 @@ double bhv2_get_double(bhv2_value_t *value, uint64_t index) {
 const char* bhv2_get_string(bhv2_value_t *value) {
     if (!value || value->dtype != MATLAB_CHAR) return NULL;
     return value->data.string;
+}
+
+/*
+ * ============================================================================
+ * grab-style Trial Iterator API
+ * ============================================================================
+ */
+
+/* Helper: Extract trial info from trial value */
+static void extract_trial_info(bhv2_file_t *file, bhv2_value_t *trial_value) {
+    if (!file || !trial_value) return;
+    
+    /* Extract TrialError */
+    bhv2_value_t *error_val = bhv2_struct_get(trial_value, "TrialError", 0);
+    file->current_trial_error = error_val ? (int)bhv2_get_double(error_val, 0) : -1;
+    
+    /* Extract Condition */
+    bhv2_value_t *cond_val = bhv2_struct_get(trial_value, "Condition", 0);
+    file->current_trial_condition = cond_val ? (int)bhv2_get_double(cond_val, 0) : -1;
+    
+    /* Extract BlockNumber */
+    bhv2_value_t *block_val = bhv2_struct_get(trial_value, "BlockNumber", 0);
+    file->current_trial_block = block_val ? (int)bhv2_get_double(block_val, 0) : -1;
+}
+
+/* Helper: Clear current trial state */
+static void clear_trial_state(bhv2_file_t *file) {
+    if (!file) return;
+    
+    if (file->current_trial_data) {
+        bhv2_value_free(file->current_trial_data);
+        file->current_trial_data = NULL;
+    }
+    
+    file->current_trial_num = 0;
+    file->current_trial_error = -1;
+    file->current_trial_condition = -1;
+    file->current_trial_block = -1;
+    file->has_current_trial = false;
+}
+
+/* Open file (grab-style naming) */
+bhv2_file_t* open_input_file(const char *path) {
+    return bhv2_open_stream(path);
+}
+
+/* Close file */
+void close_input_file(bhv2_file_t *file) {
+    if (!file) return;
+    clear_trial_state(file);
+    bhv2_file_free(file);
+}
+
+/* Rewind to beginning */
+void rewind_input_file(bhv2_file_t *file) {
+    if (!file || file->file_descriptor < 0) return;
+    
+    /* Clear current trial state */
+    clear_trial_state(file);
+    
+    /* Seek to beginning */
+    lseek(file->file_descriptor, 0, SEEK_SET);
+    file->current_pos = 0;
+    file->at_variable_data = false;
+}
+
+/* Read next trial (returns trial number, 0 on EOF, negative on error) */
+int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
+    if (!file) return -1;
+    
+    /* Clear previous trial */
+    clear_trial_state(file);
+    
+    /* Iterate through variables looking for trials */
+    char *name;
+    while (bhv2_read_next_variable_name(file, &name) == 0) {
+        /* Check if this is a Trial variable: "Trial1", "Trial2", etc. */
+        if (strncmp(name, "Trial", 5) == 0 && isdigit(name[5])) {
+            int trial_num = atoi(name + 5);
+            free(name);
+            
+            /* Read or skip data based on flag */
+            if (skip_data_flag == SKIP_DATA) {
+                /* Skip the data but still need to extract trial info */
+                /* For now, we need to read the data to get trial info */
+                /* TODO: Optimize to peek at just TrialError/Condition */
+                bhv2_value_t *trial_data = bhv2_read_variable_data(file);
+                if (!trial_data) return -1;
+                
+                /* Extract trial info */
+                file->current_trial_num = trial_num;
+                extract_trial_info(file, trial_data);
+                file->has_current_trial = true;
+                
+                /* Free the data (we're in SKIP_DATA mode) */
+                bhv2_value_free(trial_data);
+                
+                return trial_num;
+            } else {
+                /* WITH_DATA: Read and keep the data */
+                bhv2_value_t *trial_data = bhv2_read_variable_data(file);
+                if (!trial_data) return -1;
+                
+                /* Store trial info */
+                file->current_trial_num = trial_num;
+                file->current_trial_data = trial_data;
+                extract_trial_info(file, trial_data);
+                file->has_current_trial = true;
+                
+                return trial_num;
+            }
+        } else {
+            /* Not a trial - skip it */
+            free(name);
+            bhv2_skip_variable_data(file);
+        }
+    }
+    
+    /* EOF reached */
+    return 0;
+}
+
+/* Skip current trial data */
+void skip_over_data(bhv2_file_t *file) {
+    if (!file || !file->at_variable_data) return;
+    bhv2_skip_variable_data(file);
+}
+
+/* Trial accessor functions */
+int trial_number_header(bhv2_file_t *file) {
+    return file ? file->current_trial_num : 0;
+}
+
+int trial_error_header(bhv2_file_t *file) {
+    return file ? file->current_trial_error : -1;
+}
+
+int condition_header(bhv2_file_t *file) {
+    return file ? file->current_trial_condition : -1;
+}
+
+int block_number_header(bhv2_file_t *file) {
+    return file ? file->current_trial_block : -1;
+}
+
+bhv2_value_t* trial_data_header(bhv2_file_t *file) {
+    return file ? file->current_trial_data : NULL;
 }

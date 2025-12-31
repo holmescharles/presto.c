@@ -107,6 +107,14 @@ typedef struct {
     off_t file_size;         /* Total file size */
     off_t current_pos;       /* Current read position */
     bool at_variable_data;   /* Are we positioned at variable data? */
+    
+    /* Current trial state (populated by read_next_trial) */
+    int current_trial_num;       /* Trial number (1-based) */
+    int current_trial_error;     /* TrialError code */
+    int current_trial_condition; /* Condition number */
+    int current_trial_block;     /* BlockNumber */
+    bhv2_value_t *current_trial_data;  /* Full trial struct (NULL if SKIP_DATA) */
+    bool has_current_trial;      /* True if current trial is valid */
 } bhv2_file_t;
 
 /*
@@ -181,6 +189,41 @@ int bhv2_skip_variable_data(bhv2_file_t *file);
  * Caller must free with bhv2_variable_free()
  */
 bhv2_variable_t* bhv2_read_next_variable(bhv2_file_t *file);
+
+/*
+ * grab-style Trial Iterator API
+ */
+
+/* Constants for read_next_trial() */
+#define WITH_DATA 0
+#define SKIP_DATA 1
+
+/* Open BHV2 file (grab-style naming) */
+bhv2_file_t* open_input_file(const char *path);
+
+/* Close file and free resources */
+void close_input_file(bhv2_file_t *file);
+
+/* Reset file position to beginning */
+void rewind_input_file(bhv2_file_t *file);
+
+/* Read next trial (returns trial number, 0 on EOF, negative on error)
+ * skip_data_flag: WITH_DATA or SKIP_DATA
+ * Populates current trial state accessible via *_header() functions
+ */
+int read_next_trial(bhv2_file_t *file, int skip_data_flag);
+
+/* Skip current trial's data (if positioned at data) */
+void skip_over_data(bhv2_file_t *file);
+
+/* Trial accessor functions (grab-style *_header pattern)
+ * These return values from the current trial loaded by read_next_trial()
+ */
+int trial_number_header(bhv2_file_t *file);
+int trial_error_header(bhv2_file_t *file);
+int condition_header(bhv2_file_t *file);
+int block_number_header(bhv2_file_t *file);
+bhv2_value_t* trial_data_header(bhv2_file_t *file);
 
 /*
  * Value accessor helpers
