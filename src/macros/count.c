@@ -4,11 +4,13 @@
 
 #include "../macros.h"
 
-int macro_count(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result) {
-    (void)file;  /* Unused */
+int macro_count(bhv2_file_t *file, macro_result_t *result) {
+    int count = 0;
     
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%zu", trials->count);
-    macro_result_set(result, buf);
+    while (read_next_trial(file, SKIP_DATA) > 0) {
+        count++;
+    }
+    
+    macro_result_appendf(result, "%d", count);
     return 0;
 }

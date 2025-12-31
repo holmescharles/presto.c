@@ -27,8 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <ctype.h>
-#include <getopt.h>
+#include <unistd.h>
+#include <libgen.h>
+#include <sys/stat.h>
 #include "bhv2.h"
 #include "skip.h"
 #include "macros.h"
@@ -59,6 +60,7 @@ static macro_info_t macros[] = {
 
 static void print_usage(const char *prog) {
     fprintf(stderr, "Usage: %s [options] <file.bhv2> [files...]\n", prog);
+    fprintf(stderr, "       %s [options] -    (read from stdin)\n", prog);
     fprintf(stderr, "\nTrial filtering:\n");
     fprintf(stderr, "  -XE<spec>   Include only error codes (e.g., -XE0, -XE1:3)\n");
     fprintf(stderr, "  -xE<spec>   Exclude error codes\n");
@@ -71,7 +73,6 @@ static void print_usage(const char *prog) {
     fprintf(stderr, "  -g<N>       Graphical output macro\n");
     fprintf(stderr, "  -O <dir>    Output directory ('-' for stdout)\n");
     fprintf(stderr, "  -s <WxH>    Plot size in inches (default: 11x8.5, e.g., -s 8x6)\n");
-    fprintf(stderr, "  -f          Force overwrite existing files\n");
     fprintf(stderr, "\nInfo:\n");
     fprintf(stderr, "  -M          List available macros\n");
     fprintf(stderr, "  -h          Show this help\n");
@@ -92,6 +93,108 @@ static void print_macros(void) {
 }
 
 /*
+ * Buffer stdin to a temp file for seeking
+ * Returns path to temp file (caller must free and unlink)
+ * Returns NULL on error
+ */
+static char* buffer_stdin_to_tempfile(void) {
+    char *tmppath = strdup("/tmp/presto_stdin_XXXXXX");
+    int fd = mkstemp(tmppath);
+    if (fd < 0) {
+        perror("mkstemp");
+        free(tmppath);
+        return NULL;
+    }
+    
+    /* Copy stdin to temp file */
+    char buf[65536];
+    ssize_t n;
+    while ((n = read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
+        ssize_t written = 0;
+        while (written < n) {
+            ssize_t w = write(fd, buf + written, n - written);
+            if (w < 0) {
+                perror("write");
+                close(fd);
+                unlink(tmppath);
+                free(tmppath);
+                return NULL;
+            }
+            written += w;
+        }
+    }
+    
+    if (n < 0) {
+        perror("read");
+        close(fd);
+        unlink(tmppath);
+        free(tmppath);
+        return NULL;
+    }
+    
+    close(fd);
+    return tmppath;
+}
+
+/*
+ * Build output filename for text macro results
+ * Input: "/path/to/sample_10_errors.bhv2", macro_id=0
+ * Output: "sample_10_errors.o0.txt" (caller must free)
+ */
+static char* make_output_filename(const char *input_path, int macro_id) {
+    /* Get basename */
+    char *path_copy = strdup(input_path);
+    const char *base = basename(path_copy);
+    
+    /* Find extension and strip it */
+    char *dot = strrchr(base, '.');
+    size_t stem_len = dot ? (size_t)(dot - base) : strlen(base);
+    
+    /* Build output filename: stem.o<N>.txt */
+    char *output = malloc(stem_len + 16);  /* stem + ".o" + number + ".txt" + null */
+    if (output) {
+        snprintf(output, stem_len + 16, "%.*s.o%d.txt", (int)stem_len, base, macro_id);
+    }
+    
+    free(path_copy);
+    return output;
+}
+
+/*
+ * Write text result to file
+ * Returns 0 on success, -1 on error
+ */
+static int write_result_to_file(const char *dir, const char *filename, const char *text) {
+    /* Build full path */
+    size_t path_len = strlen(dir) + 1 + strlen(filename) + 1;
+    char *path = malloc(path_len);
+    if (!path) return -1;
+    snprintf(path, path_len, "%s/%s", dir, filename);
+    
+    FILE *fp = fopen(path, "w");
+    if (!fp) {
+        fprintf(stderr, "Error: Cannot write to %s: ", path);
+        perror(NULL);
+        free(path);
+        return -1;
+    }
+    
+    if (text) {
+        fputs(text, fp);
+        /* Ensure trailing newline */
+        size_t len = strlen(text);
+        if (len > 0 && text[len-1] != '\n') {
+            fputc('\n', fp);
+        }
+    }
+    
+    fclose(fp);
+    printf("Saved: %s\n", path);
+    free(path);
+    return 0;
+}
+
+/*
  * Parse filter arguments from argv
  * Returns index of first non-option argument (file)
  */
@@ -102,7 +205,6 @@ typedef struct {
     int graph_macro;
     char *output_dir;
     bool to_stdout;
-    bool force;
     bool list_macros;
     bool show_help;
     bool show_version;
@@ -117,7 +219,6 @@ static void args_init(presto_args_t *args) {
     args->graph_macro = -1;  /* No graph by default */
     args->output_dir = NULL;
     args->to_stdout = false;
-    args->force = false;
     args->list_macros = false;
     args->show_help = false;
     args->show_version = false;
@@ -138,6 +239,12 @@ static int parse_args(int argc, char **argv, presto_args_t *args) {
     while (i < argc) {
         char *arg = argv[i];
         
+        /* '-' alone means stdin, treat as file not option */
+        if (strcmp(arg, "-") == 0) {
+            args->first_file_idx = i;
+            return 0;
+        }
+        
         if (arg[0] != '-') {
             /* First non-option is file */
             args->first_file_idx = i;
@@ -157,12 +264,6 @@ static int parse_args(int argc, char **argv, presto_args_t *args) {
         if (strcmp(arg, "-M") == 0) {
             args->list_macros = true;
             return 0;
-        }
-        
-        if (strcmp(arg, "-f") == 0) {
-            args->force = true;
-            i++;
-            continue;
         }
         
         if (strcmp(arg, "-O") == 0) {
@@ -291,79 +392,58 @@ int main(int argc, char **argv) {
         return 1;
     }
     
+    /* Check output directory exists if specified */
+    if (args.output_dir && !args.to_stdout) {
+        struct stat st;
+        if (stat(args.output_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+            fprintf(stderr, "Error: Output directory does not exist: %s\n", args.output_dir);
+            args_free(&args);
+            return 1;
+        }
+    }
+    
     /* Process each file */
     int status = 0;
+    int n_files = argc - args.first_file_idx;
+    char *stdin_tmpfile = NULL;  /* Track stdin temp file for cleanup */
+    
     for (int i = args.first_file_idx; i < argc; i++) {
         const char *filepath = argv[i];
+        const char *display_name = filepath;  /* Name to show in output */
+        
+        /* Handle stdin with explicit '-' */
+        if (strcmp(filepath, "-") == 0) {
+            if (n_files > 1) {
+                fprintf(stderr, "Error: stdin (-) cannot be combined with other files\n");
+                status = 1;
+                break;
+            }
+            stdin_tmpfile = buffer_stdin_to_tempfile();
+            if (!stdin_tmpfile) {
+                fprintf(stderr, "Error: Failed to buffer stdin\n");
+                status = 1;
+                break;
+            }
+            filepath = stdin_tmpfile;
+            display_name = "(stdin)";
+        }
         
         /* Open BHV2 file with streaming API */
         bhv2_file_t *file = bhv2_open_stream(filepath);
         if (!file) {
-            fprintf(stderr, "Error: Failed to open %s: %s\n", filepath, bhv2_error_detail);
+            fprintf(stderr, "Error: Failed to open %s: %s\n", display_name, bhv2_error_detail);
             status = 1;
             continue;
         }
         
-        /* Stream through variables and filter trials */
-        trial_list_t *trials = trial_list_new();
-        if (!trials) {
-            fprintf(stderr, "Error: Failed to allocate trial list\n");
-            bhv2_file_free(file);
-            status = 1;
-            continue;
-        }
-        
-        char *name;
-        while (bhv2_read_next_variable_name(file, &name) == 0) {
-            /* Check if this is a Trial variable (e.g., "Trial1", "Trial2", ...) */
-            if (strncmp(name, "Trial", 5) == 0 && isdigit(name[5])) {
-                int trial_num = atoi(name + 5);
-                
-                /* Read the trial data */
-                bhv2_value_t *trial_data = bhv2_read_variable_data(file);
-                if (!trial_data) {
-                    fprintf(stderr, "Warning: Failed to read trial %d data\n", trial_num);
-                    free(name);
-                    continue;
-                }
-                
-                /* Extract trial info for filtering */
-                trial_info_t info = {
-                    .trial_num = trial_num,
-                    .error_code = get_trial_error_from_value(trial_data),
-                    .condition = get_trial_condition_from_value(trial_data)
-                };
-                
-                /* Check if trial should be skipped */
-                if (skip_trial(args.skips, &info)) {
-                    /* Trial should be skipped - free it */
-                    bhv2_value_free(trial_data);
-                } else {
-                    /* Trial should be kept - add to list */
-                    if (trial_list_add(trials, trial_num, trial_data) < 0) {
-                        fprintf(stderr, "Error: Failed to add trial to list\n");
-                        bhv2_value_free(trial_data);
-                        free(name);
-                        break;
-                    }
-                }
-            } else {
-                /* Not a trial variable - skip it */
-                if (bhv2_skip_variable_data(file) < 0) {
-                    fprintf(stderr, "Warning: Failed to skip variable %s\n", name);
-                    free(name);
-                    break;
-                }
-            }
-            
-            free(name);
-        }
+        /* Set skip rules - macros will iterate trials themselves */
+        bhv2_set_skips(file, args.skips);
         
         /* Run the appropriate macro */
         if (args.graph_macro >= 0) {
             /* Graphical output */
             const char *output_path = args.output_dir ? args.output_dir : ".";
-            int plot_status = run_plot_macro(args.graph_macro, file, trials, filepath, output_path,
+            int plot_status = run_plot_macro(args.graph_macro, file, filepath, output_path,
                                             args.plot_width, args.plot_height);
             if (plot_status != 0) {
                 fprintf(stderr, "Error: Plot generation failed\n");
@@ -372,13 +452,13 @@ int main(int argc, char **argv) {
         } else {
             /* Text output */
             macro_result_t result;
-            int macro_status = run_macro(args.output_macro, file, trials, &result);
+            int macro_status = run_macro(args.output_macro, file, &result);
             
             if (macro_status != 0) {
                 fprintf(stderr, "Error: Unknown macro -o%d\n\n", args.output_macro);
                 fprintf(stderr, "Available text macros:\n");
-                for (int i = 0; macros[i].name != NULL; i++) {
-                    fprintf(stderr, "  -o%d  %s\n", macros[i].id, macros[i].description);
+                for (int j = 0; macros[j].name != NULL; j++) {
+                    fprintf(stderr, "  -o%d  %s\n", macros[j].id, macros[j].description);
                 }
                 fprintf(stderr, "\nUse '%s -M' to list all macros.\n", argv[0]);
                 status = 1;
@@ -386,24 +466,38 @@ int main(int argc, char **argv) {
                 /* Output result */
                 if (args.to_stdout || args.output_dir == NULL) {
                     /* Print to stdout */
-                    if (argc - args.first_file_idx > 1) {
-                        /* Multiple files - prefix with filename */
-                        printf("%s\t%s\n", filepath, result.text ? result.text : "");
+                    if (n_files > 1) {
+                        /* Multiple files - use header separator */
+                        printf("==> %s <==\n", display_name);
+                        printf("%s\n", result.text ? result.text : "");
                     } else {
                         printf("%s\n", result.text ? result.text : "");
                     }
                 } else {
                     /* Write to file */
-                    /* TODO: Implement file output */
-                    printf("%s\n", result.text ? result.text : "");
+                    char *outfile = make_output_filename(display_name, args.output_macro);
+                    if (outfile) {
+                        if (write_result_to_file(args.output_dir, outfile, result.text) != 0) {
+                            status = 1;
+                        }
+                        free(outfile);
+                    } else {
+                        fprintf(stderr, "Error: Failed to create output filename\n");
+                        status = 1;
+                    }
                 }
                 
                 macro_result_free(&result);
             }
         }
         
-        trial_list_free(trials);
         bhv2_file_free(file);
+    }
+    
+    /* Clean up stdin temp file if used */
+    if (stdin_tmpfile) {
+        unlink(stdin_tmpfile);
+        free(stdin_tmpfile);
     }
     
     args_free(&args);

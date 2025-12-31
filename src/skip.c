@@ -256,63 +256,12 @@ int get_trial_condition_from_value(bhv2_value_t *trial_value) {
     return (int)bhv2_get_double(cond_val, 0);
 }
 
-/*
- * Trial list management
- */
+int get_trial_block_from_value(bhv2_value_t *trial_value) {
+    if (!trial_value || trial_value->dtype != MATLAB_STRUCT) return -1;
 
-trial_list_t* trial_list_new(void) {
-    trial_list_t *list = calloc(1, sizeof(trial_list_t));
-    if (!list) return NULL;
-    
-    list->capacity = 1000;  /* Initial capacity */
-    list->trial_nums = malloc(list->capacity * sizeof(int));
-    list->trial_data = malloc(list->capacity * sizeof(bhv2_value_t*));
-    
-    if (!list->trial_nums || !list->trial_data) {
-        free(list->trial_nums);
-        free(list->trial_data);
-        free(list);
-        return NULL;
-    }
-    
-    return list;
-}
+    /* Trial is a struct - get Block field */
+    bhv2_value_t *block_val = bhv2_struct_get(trial_value, "Block", 0);
+    if (!block_val) return -1;
 
-int trial_list_add(trial_list_t *list, int trial_num, bhv2_value_t *trial_data) {
-    if (!list) return -1;
-    
-    /* Grow if needed */
-    if (list->count >= list->capacity) {
-        size_t new_capacity = list->capacity * 2;
-        int *new_nums = realloc(list->trial_nums, new_capacity * sizeof(int));
-        bhv2_value_t **new_data = realloc(list->trial_data, new_capacity * sizeof(bhv2_value_t*));
-        
-        if (!new_nums || !new_data) {
-            free(new_nums);
-            return -1;
-        }
-        
-        list->trial_nums = new_nums;
-        list->trial_data = new_data;
-        list->capacity = new_capacity;
-    }
-    
-    list->trial_nums[list->count] = trial_num;
-    list->trial_data[list->count] = trial_data;
-    list->count++;
-    
-    return 0;
-}
-
-void trial_list_free(trial_list_t *list) {
-    if (!list) return;
-    
-    /* Free all trial data */
-    for (size_t i = 0; i < list->count; i++) {
-        bhv2_value_free(list->trial_data[i]);
-    }
-    
-    free(list->trial_nums);
-    free(list->trial_data);
-    free(list);
+    return (int)bhv2_get_double(block_val, 0);
 }

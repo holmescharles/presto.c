@@ -4,30 +4,26 @@
 
 #include "../macros.h"
 
-int macro_errors(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result) {
-    (void)file;  /* Unused */
-    
-    /* Count error codes */
-    int error_counts[256] = {0};
-    int max_error = -1;
+int macro_errors(bhv2_file_t *file, macro_result_t *result) {
+    /* Count error codes (MonkeyLogic uses 0-9) */
+    int error_counts[10] = {0};
+    int total = 0;
 
-    for (size_t i = 0; i < trials->count; i++) {
-        int error = get_trial_error_from_value(trials->trial_data[i]);
-        if (error >= 0 && error < 256) {
+    while (read_next_trial(file, SKIP_DATA) > 0) {
+        int error = trial_error_header(file);
+        if (error >= 0 && error < 10) {
             error_counts[error]++;
-            if (error > max_error) max_error = error;
         }
+        total++;
     }
     
     /* Header */
     macro_result_append(result, "Error\tCount\tPercent\n");
     
-    /* Output each error code */
-    for (int e = 0; e <= max_error; e++) {
-        if (error_counts[e] > 0) {
-            double pct = 100.0 * error_counts[e] / trials->count;
-            macro_result_appendf(result, "%d\t%d\t%.1f%%\n", e, error_counts[e], pct);
-        }
+    /* Output all error codes 0-9 */
+    for (int e = 0; e < 10; e++) {
+        double pct = total > 0 ? 100.0 * error_counts[e] / total : 0.0;
+        macro_result_appendf(result, "%d\t%d\t%.1f%%\n", e, error_counts[e], pct);
     }
     
     return 0;

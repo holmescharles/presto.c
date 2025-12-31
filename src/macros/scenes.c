@@ -5,17 +5,15 @@
 
 #include "../macros.h"
 
-int macro_scenes(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result) {
-    (void)file;  /* Unused */
-    
-    if (trials->count == 0) {
+int macro_scenes(bhv2_file_t *file, macro_result_t *result) {
+    /* Read first trial to examine scene structure */
+    int trial_num = read_next_trial(file, WITH_DATA);
+    if (trial_num <= 0) {
         macro_result_set(result, "No trials");
         return 0;
     }
     
-    /* Get first trial to examine scene structure */
-    int trial_num = trials->trial_nums[0];
-    bhv2_value_t *trial_value = trials->trial_data[0];
+    bhv2_value_t *trial_value = trial_data_header(file);
 
     /* Get ObjectStatusRecord */
     bhv2_value_t *osr = bhv2_struct_get(trial_value, "ObjectStatusRecord", 0);

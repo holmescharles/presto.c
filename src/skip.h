@@ -48,7 +48,7 @@ typedef struct {
  * Skip set - all rules to apply
  */
 
-typedef struct {
+typedef struct skip_set {
     skip_rule_t *rules;
     size_t count;
     size_t capacity;
@@ -63,17 +63,6 @@ typedef struct {
     int error_code;     /* TrialError value */
     int condition;      /* Condition number */
 } trial_info_t;
-
-/*
- * Trial list (streaming version)
- */
-
-typedef struct {
-    int *trial_nums;        /* Array of 1-based trial numbers that were not skipped */
-    bhv2_value_t **trial_data; /* Actual trial data for macros */
-    size_t count;
-    size_t capacity;
-} trial_list_t;
 
 /*
  * Skip operations
@@ -106,17 +95,8 @@ void skip_range_free(skip_range_t *range);
  */
 bool skip_trial(skip_set_t *ss, trial_info_t *info);
 
-/* Create new trial list */
-trial_list_t* trial_list_new(void);
-
-/* Add trial to list */
-int trial_list_add(trial_list_t *list, int trial_num, bhv2_value_t *trial_data);
-
-/* Free trial list */
-void trial_list_free(trial_list_t *list);
-
 /*
- * Utility functions (streaming version)
+ * Utility functions for extracting trial info from BHV2 values
  */
 
 /* Get trial error code from trial variable data */
@@ -124,5 +104,8 @@ int get_trial_error_from_value(bhv2_value_t *trial_value);
 
 /* Get trial condition from trial variable data */
 int get_trial_condition_from_value(bhv2_value_t *trial_value);
+
+/* Get trial block number from trial variable data */
+int get_trial_block_from_value(bhv2_value_t *trial_value);
 
 #endif /* SKIP_H */

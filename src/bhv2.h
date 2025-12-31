@@ -98,6 +98,12 @@ typedef struct {
 } bhv2_variable_t;
 
 /*
+ * Forward declarations
+ */
+
+typedef struct skip_set skip_set_t;  /* Defined in skip.h */
+
+/*
  * File - collection of top-level variables (streaming mode)
  */
 
@@ -107,6 +113,9 @@ typedef struct {
     off_t file_size;         /* Total file size */
     off_t current_pos;       /* Current read position */
     bool at_variable_data;   /* Are we positioned at variable data? */
+    
+    /* Skip filtering (set via bhv2_set_skips) */
+    skip_set_t *skips;           /* Skip rules for read_next_trial() */
     
     /* Current trial state (populated by read_next_trial) */
     int current_trial_num;       /* Trial number (1-based) */
@@ -206,6 +215,9 @@ void close_input_file(bhv2_file_t *file);
 
 /* Reset file position to beginning */
 void rewind_input_file(bhv2_file_t *file);
+
+/* Set skip rules for trial filtering (used by read_next_trial) */
+void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips);
 
 /* Read next trial (returns trial number, 0 on EOF, negative on error)
  * skip_data_flag: WITH_DATA or SKIP_DATA

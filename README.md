@@ -102,15 +102,27 @@ PRESTO supports powerful trial filtering syntax:
 # Output to stdout (default)
 ./bin/presto -o1 data.bhv2
 
+# Multiple files get ==> filename <== headers
+./bin/presto -o1 *.bhv2
+
 # Output to stdout for piping
 ./bin/presto -O - -o1 *.bhv2 | grep Subject
 
-# Save to specific directory
+# Save to specific directory (creates <basename>.o<N>.txt files)
 ./bin/presto -O results/ -o1 data.bhv2
-
-# Force overwrite existing files
-./bin/presto -f -o1 data.bhv2
 ```
+
+### Reading from Stdin
+
+```bash
+# Read BHV2 from stdin (use '-' as filename)
+cat data.bhv2 | ./bin/presto -o1 -
+
+# Pipe from another command
+some_command | ./bin/presto -o0 -
+```
+
+Note: Stdin cannot be combined with other files.
 
 ---
 
@@ -344,7 +356,9 @@ Output:
   -g<N>       Graphical output macro (requires gnuplot)
   -O <dir>    Output directory ('-' for stdout)
   -s <WxH>    Plot size in inches (default: 11x8.5, e.g., -s 8x6)
-  -f          Force overwrite existing files
+
+Input:
+  -           Read from stdin (cannot combine with other files)
 
 Info:
   -M          List available macros

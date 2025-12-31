@@ -1,12 +1,14 @@
 /*
  * macros.h - Text output macros for presto
+ *
+ * Macros iterate trials themselves using read_next_trial() (grab-style).
+ * Skip filtering is handled internally by read_next_trial().
  */
 
 #ifndef PRESTO_MACROS_H
 #define PRESTO_MACROS_H
 
 #include "bhv2.h"
-#include "skip.h"
 
 /*
  * Macro result - text output from a macro
@@ -37,30 +39,31 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...);
 
 /*
  * Run a macro by ID
- * Returns 0 on success, -1 on error
+ * Returns 0 on success, -1 on error (unknown macro)
  */
-int run_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int run_macro(int macro_id, bhv2_file_t *file, macro_result_t *result);
 
 /*
  * Individual macros (implementations in src/macros/)
+ * Each macro iterates trials using read_next_trial(file, WITH_DATA/SKIP_DATA)
  */
 
 /* Macro 0: Count trials */
-int macro_count(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_count(bhv2_file_t *file, macro_result_t *result);
 
 /* Macro 1: Behavior summary */
-int macro_behavior(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_behavior(bhv2_file_t *file, macro_result_t *result);
 
 /* Macro 2: Error code breakdown */
-int macro_errors(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_errors(bhv2_file_t *file, macro_result_t *result);
 
 /* Macro 3: Scene structure */
-int macro_scenes(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_scenes(bhv2_file_t *file, macro_result_t *result);
 
 /* Macro 4: Analog data info */
-int macro_analog(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_analog(bhv2_file_t *file, macro_result_t *result);
 
 /* Macro 5: Error counts per condition */
-int macro_errorcounts(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result);
+int macro_errorcounts(bhv2_file_t *file, macro_result_t *result);
 
 #endif /* PRESTO_MACROS_H */

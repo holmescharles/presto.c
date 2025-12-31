@@ -8,6 +8,7 @@
 #define _POSIX_C_SOURCE 200809L  /* For strdup, lseek */
 
 #include "bhv2.h"
+#include "skip.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>    /* isdigit */
@@ -921,7 +922,16 @@ void rewind_input_file(bhv2_file_t *file) {
     file->at_variable_data = false;
 }
 
-/* Read next trial (returns trial number, 0 on EOF, negative on error) */
+/* Set skip rules for trial filtering */
+void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips) {
+    if (file) {
+        file->skips = skips;
+    }
+}
+
+/* Read next trial (returns trial number, 0 on EOF, negative on error)
+ * Automatically skips trials that match the skip rules (grab-style).
+ */
 int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
     if (!file) return -1;
     
@@ -936,36 +946,41 @@ int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
             int trial_num = atoi(name + 5);
             free(name);
             
-            /* Read or skip data based on flag */
-            if (skip_data_flag == SKIP_DATA) {
-                /* Skip the data but still need to extract trial info */
-                /* For now, we need to read the data to get trial info */
-                /* TODO: Optimize to peek at just TrialError/Condition */
-                bhv2_value_t *trial_data = bhv2_read_variable_data(file);
-                if (!trial_data) return -1;
-                
-                /* Extract trial info */
-                file->current_trial_num = trial_num;
-                extract_trial_info(file, trial_data);
-                file->has_current_trial = true;
-                
-                /* Free the data (we're in SKIP_DATA mode) */
-                bhv2_value_free(trial_data);
-                
-                return trial_num;
-            } else {
-                /* WITH_DATA: Read and keep the data */
-                bhv2_value_t *trial_data = bhv2_read_variable_data(file);
-                if (!trial_data) return -1;
-                
-                /* Store trial info */
-                file->current_trial_num = trial_num;
-                file->current_trial_data = trial_data;
-                extract_trial_info(file, trial_data);
-                file->has_current_trial = true;
-                
-                return trial_num;
+            /* Always read data to get trial info for filtering */
+            bhv2_value_t *trial_data = bhv2_read_variable_data(file);
+            if (!trial_data) return -1;
+            
+            /* Extract trial info */
+            file->current_trial_num = trial_num;
+            extract_trial_info(file, trial_data);
+            
+            /* Check if trial should be skipped (grab-style filtering) */
+            if (file->skips) {
+                trial_info_t info = {
+                    .trial_num = trial_num,
+                    .error_code = file->current_trial_error,
+                    .condition = file->current_trial_condition
+                };
+                if (skip_trial(file->skips, &info)) {
+                    /* Skip this trial - free data and continue */
+                    bhv2_value_free(trial_data);
+                    clear_trial_state(file);
+                    continue;
+                }
             }
+            
+            /* Trial passed filters */
+            file->has_current_trial = true;
+            
+            if (skip_data_flag == SKIP_DATA) {
+                /* Caller doesn't need data - free it */
+                bhv2_value_free(trial_data);
+            } else {
+                /* WITH_DATA: Keep the data */
+                file->current_trial_data = trial_data;
+            }
+            
+            return trial_num;
         } else {
             /* Not a trial - skip it */
             free(name);

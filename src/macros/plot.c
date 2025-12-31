@@ -15,8 +15,10 @@
 #include <unistd.h>
 #include <libgen.h>
 #include "../bhv2.h"
-#include "../skip.h"
 #include "plot.h"
+
+/* Initial capacity for trial_data array */
+#define INITIAL_TRIAL_CAPACITY 256
 
 /* Data structures for plotting */
 
@@ -93,30 +95,26 @@ static void cleanup_temp_dir(const char *tmpdir) {
     
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "rm -rf %s", tmpdir);
-    system(cmd);
+    int ret __attribute__((unused)) = system(cmd);  /* Best-effort cleanup */
 }
 
-/* Extract analog data from a trial */
-static int extract_trial_analog_data(bhv2_value_t *trial_value, int trial_num, trial_analog_data_t *out) {
+/* Extract analog data from a trial using header functions and trial data */
+static int extract_trial_analog_data(bhv2_file_t *file, trial_analog_data_t *out) {
     memset(out, 0, sizeof(trial_analog_data_t));
-    out->trial_num = trial_num;
     
-    /* Get trial metadata */
-    bhv2_value_t *trial_error = bhv2_struct_get(trial_value, "TrialError", 0);
-    if (trial_error) {
-        out->error_code = (int)bhv2_get_double(trial_error, 0);
+    /* Get trial metadata from header functions */
+    out->trial_num = trial_number_header(file);
+    out->error_code = trial_error_header(file);
+    out->condition = condition_header(file);
+    out->block = block_number_header(file);
+    
+    /* Get trial data struct */
+    bhv2_value_t *trial_value = trial_data_header(file);
+    if (!trial_value) {
+        return 0;  /* No data */
     }
     
-    bhv2_value_t *condition = bhv2_struct_get(trial_value, "Condition", 0);
-    if (condition) {
-        out->condition = (int)bhv2_get_double(condition, 0);
-    }
-    
-    bhv2_value_t *block = bhv2_struct_get(trial_value, "Block", 0);
-    if (block) {
-        out->block = (int)bhv2_get_double(block, 0);
-    }
-    
+    /* Get AbsoluteTrialStartTime */
     bhv2_value_t *abs_time = bhv2_struct_get(trial_value, "AbsoluteTrialStartTime", 0);
     if (abs_time) {
         out->abs_start_time = bhv2_get_double(abs_time, 0);
@@ -394,16 +392,15 @@ static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_tria
     fprintf(fp, "set style fill solid 0.8 border -1\n");
     fprintf(fp, "set boxwidth 0.9 relative\n\n");
     
-    /* Count error types */
-    int error_counts[256] = {0};
-    int max_error = -1;
+    /* Count error types (MonkeyLogic uses 0-9) */
+    int error_counts[10] = {0};
     for (int i = 0; i < n_trials; i++) {
         int e = trials[i].error_code;
-        if (e >= 0 && e < 256) {
+        if (e >= 0 && e < 10) {
             error_counts[e]++;
-            if (e > max_error) max_error = e;
         }
     }
+    (void)error_counts;  /* Currently unused but available for future enhancements */
     
     /* Create histogram with error-specific coloring */
     fprintf(fp, "# Color definitions\n");
@@ -439,19 +436,13 @@ static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_tria
     return 0;
 }
 
-/* Main plotting function */
-int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
+/* Main plotting function - iterates trials using read_next_trial() */
+int run_plot_macro(int macro_id, bhv2_file_t *file,
                    const char *input_path, const char *output_dir,
                    double width, double height) {
-    (void)file;  /* Unused for now */
     
     /* Check gnuplot */
     if (check_gnuplot_installed() != 0) {
-        return -1;
-    }
-    
-    if (trials->count == 0) {
-        fprintf(stderr, "Warning: No trials to plot\n");
         return -1;
     }
     
@@ -461,16 +452,39 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         return -1;
     }
     
-    /* Extract analog data from all trials */
-    trial_analog_data_t *trial_data = calloc(trials->count, sizeof(trial_analog_data_t));
+    /* Iterate trials and build trial_data array dynamically */
+    size_t capacity = INITIAL_TRIAL_CAPACITY;
+    size_t n_trials = 0;
+    trial_analog_data_t *trial_data = calloc(capacity, sizeof(trial_analog_data_t));
     if (!trial_data) {
         cleanup_temp_dir(tmpdir);
         free(tmpdir);
         return -1;
     }
     
-    for (size_t i = 0; i < trials->count; i++) {
-        extract_trial_analog_data(trials->trial_data[i], trials->trial_nums[i], &trial_data[i]);
+    /* Iterate through all trials (skip filtering happens in read_next_trial) */
+    while (read_next_trial(file, WITH_DATA) > 0) {
+        /* Grow array if needed */
+        if (n_trials >= capacity) {
+            capacity *= 2;
+            trial_analog_data_t *new_data = realloc(trial_data, capacity * sizeof(trial_analog_data_t));
+            if (!new_data) {
+                fprintf(stderr, "Error: Failed to grow trial array\n");
+                goto cleanup_error;
+            }
+            trial_data = new_data;
+            /* Zero the new portion */
+            memset(&trial_data[n_trials], 0, (capacity - n_trials) * sizeof(trial_analog_data_t));
+        }
+        
+        /* Extract analog data from current trial */
+        extract_trial_analog_data(file, &trial_data[n_trials]);
+        n_trials++;
+    }
+    
+    if (n_trials == 0) {
+        fprintf(stderr, "Warning: No trials to plot\n");
+        goto cleanup_error;
     }
     
     /* Determine output filename */
@@ -492,13 +506,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
     if (strcmp(out_dir, "-") == 0) {
         /* TODO: Handle stdout output */
         fprintf(stderr, "Error: Stdout output (-O -) not yet implemented for plots\n");
-        cleanup_temp_dir(tmpdir);
-        free(tmpdir);
-        for (size_t i = 0; i < trials->count; i++) {
-            trial_analog_free(&trial_data[i]);
-        }
-        free(trial_data);
-        return -1;
+        goto cleanup_error;
     }
     
     int ret = 0;
@@ -508,7 +516,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         snprintf(output_pdf, sizeof(output_pdf), "%s/AnalogData_%s.pdf", out_dir, stem);
         
         /* Write data files */
-        for (size_t i = 0; i < trials->count; i++) {
+        for (size_t i = 0; i < n_trials; i++) {
             char data_file[1024];
             snprintf(data_file, sizeof(data_file), "%s/trial_%03zu.dat", tmpdir, i);
             if (write_trial_data_file(&trial_data[i], data_file) != 0) {
@@ -518,7 +526,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         }
         
         /* Generate gnuplot script */
-        if (generate_analog_plot_script(trial_data, trials->count, tmpdir, output_pdf, width, height) != 0) {
+        if (generate_analog_plot_script(trial_data, n_trials, tmpdir, output_pdf, width, height) != 0) {
             ret = -1;
             goto cleanup;
         }
@@ -527,7 +535,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         /* -g2: Timeline histogram */
         snprintf(output_pdf, sizeof(output_pdf), "%s/Timeline_%s.pdf", out_dir, stem);
         
-        if (generate_timeline_plot_script(trial_data, trials->count, tmpdir, output_pdf, width, height) != 0) {
+        if (generate_timeline_plot_script(trial_data, n_trials, tmpdir, output_pdf, width, height) != 0) {
             ret = -1;
             goto cleanup;
         }
@@ -553,7 +561,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
     
 cleanup:
     /* Clean up */
-    for (size_t i = 0; i < trials->count; i++) {
+    for (size_t i = 0; i < n_trials; i++) {
         trial_analog_free(&trial_data[i]);
     }
     free(trial_data);
@@ -566,4 +574,13 @@ cleanup:
     
     free(tmpdir);
     return ret;
+
+cleanup_error:
+    for (size_t i = 0; i < n_trials; i++) {
+        trial_analog_free(&trial_data[i]);
+    }
+    free(trial_data);
+    cleanup_temp_dir(tmpdir);
+    free(tmpdir);
+    return -1;
 }

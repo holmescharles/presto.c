@@ -69,16 +69,16 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...) {
  * Run macro by ID - dispatches to individual macro implementations
  */
 
-int run_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials, macro_result_t *result) {
+int run_macro(int macro_id, bhv2_file_t *file, macro_result_t *result) {
     macro_result_init(result);
     
     switch (macro_id) {
-        case 0: return macro_count(file, trials, result);
-        case 1: return macro_behavior(file, trials, result);
-        case 2: return macro_errors(file, trials, result);
-        case 3: return macro_scenes(file, trials, result);
-        case 4: return macro_analog(file, trials, result);
-        case 5: return macro_errorcounts(file, trials, result);
+        case 0: return macro_count(file, result);
+        case 1: return macro_behavior(file, result);
+        case 2: return macro_errors(file, result);
+        case 3: return macro_scenes(file, result);
+        case 4: return macro_analog(file, result);
+        case 5: return macro_errorcounts(file, result);
         default:
             macro_result_set(result, "Unknown macro");
             return -1;

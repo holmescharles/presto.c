@@ -4,17 +4,15 @@
 
 #include "../macros.h"
 
-int macro_analog(bhv2_file_t *file, trial_list_t *trials, macro_result_t *result) {
-    (void)file;  /* Unused */
-    
-    if (trials->count == 0) {
+int macro_analog(bhv2_file_t *file, macro_result_t *result) {
+    /* Read first trial to examine analog structure */
+    int trial_num = read_next_trial(file, WITH_DATA);
+    if (trial_num <= 0) {
         macro_result_set(result, "No trials");
         return 0;
     }
     
-    /* Get first trial */
-    int trial_num = trials->trial_nums[0];
-    bhv2_value_t *trial_value = trials->trial_data[0];
+    bhv2_value_t *trial_value = trial_data_header(file);
 
     /* Get AnalogData */
     bhv2_value_t *analog = bhv2_struct_get(trial_value, "AnalogData", 0);
