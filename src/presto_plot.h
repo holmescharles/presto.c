@@ -16,10 +16,13 @@
  * trials: Filtered trial list
  * input_path: Original input file path (for naming output)
  * output_dir: Directory for output PDF (or "-" for stdout, NULL for current dir)
+ * width: Plot width in inches
+ * height: Plot height in inches
  * 
  * Returns: 0 on success, -1 on error
  */
 int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials, 
-                   const char *input_path, const char *output_dir);
+                   const char *input_path, const char *output_dir,
+                   double width, double height);
 
 #endif /* PRESTO_PLOT_H */

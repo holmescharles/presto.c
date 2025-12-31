@@ -70,6 +70,7 @@ static void print_usage(const char *prog) {
     fprintf(stderr, "  -o<N>       Text output macro (default: 0)\n");
     fprintf(stderr, "  -g<N>       Graphical output macro\n");
     fprintf(stderr, "  -O <dir>    Output directory ('-' for stdout)\n");
+    fprintf(stderr, "  -s <WxH>    Plot size in inches (default: 11x8.5, e.g., -s 8x6)\n");
     fprintf(stderr, "  -f          Force overwrite existing files\n");
     fprintf(stderr, "\nInfo:\n");
     fprintf(stderr, "  -M          List available macros\n");
@@ -106,6 +107,8 @@ typedef struct {
     bool show_help;
     bool show_version;
     int first_file_idx;
+    double plot_width;   /* Plot width in inches */
+    double plot_height;  /* Plot height in inches */
 } presto_args_t;
 
 static void args_init(presto_args_t *args) {
@@ -119,6 +122,8 @@ static void args_init(presto_args_t *args) {
     args->show_help = false;
     args->show_version = false;
     args->first_file_idx = -1;
+    args->plot_width = 11.0;   /* Default: 11 inches wide */
+    args->plot_height = 8.5;   /* Default: 8.5 inches tall */
 }
 
 static void args_free(presto_args_t *args) {
@@ -171,6 +176,32 @@ static int parse_args(int argc, char **argv, presto_args_t *args) {
                 args->to_stdout = true;
             } else {
                 args->output_dir = strdup(argv[i]);
+            }
+            i++;
+            continue;
+        }
+        
+        if (strcmp(arg, "-s") == 0) {
+            /* Plot size - next arg in format WxH */
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: -s requires size argument (e.g., -s 11x8.5)\n");
+                return -1;
+            }
+            i++;
+            char *size_str = argv[i];
+            char *x_pos = strchr(size_str, 'x');
+            if (!x_pos) {
+                fprintf(stderr, "Error: Invalid size format '%s' (use WxH, e.g., 11x8.5)\n", size_str);
+                return -1;
+            }
+            *x_pos = '\0';  /* Split at 'x' */
+            args->plot_width = atof(size_str);
+            args->plot_height = atof(x_pos + 1);
+            
+            if (args->plot_width <= 0 || args->plot_height <= 0) {
+                fprintf(stderr, "Error: Invalid plot dimensions: %gx%g (must be positive)\n",
+                        args->plot_width, args->plot_height);
+                return -1;
             }
             i++;
             continue;
@@ -332,7 +363,8 @@ int main(int argc, char **argv) {
         if (args.graph_macro >= 0) {
             /* Graphical output */
             const char *output_path = args.output_dir ? args.output_dir : ".";
-            int plot_status = run_plot_macro(args.graph_macro, file, trials, filepath, output_path);
+            int plot_status = run_plot_macro(args.graph_macro, file, trials, filepath, output_path,
+                                            args.plot_width, args.plot_height);
             if (plot_status != 0) {
                 fprintf(stderr, "Error: Plot generation failed\n");
                 status = 1;

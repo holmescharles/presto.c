@@ -270,7 +270,8 @@ static int write_trial_data_file(trial_analog_data_t *tad, const char *filepath)
 
 /* Generate gnuplot script for analog data (-g1) */
 static int generate_analog_plot_script(trial_analog_data_t *trials, int n_trials, 
-                                       const char *tmpdir, const char *output_pdf) {
+                                       const char *tmpdir, const char *output_pdf,
+                                       double width, double height) {
     char script_path[1024];
     snprintf(script_path, sizeof(script_path), "%s/plot.gp", tmpdir);
     
@@ -281,7 +282,7 @@ static int generate_analog_plot_script(trial_analog_data_t *trials, int n_trials
     }
     
     /* Gnuplot header */
-    fprintf(fp, "set terminal pdfcairo enhanced color font 'Sans,10' size 11,8.5\n");
+    fprintf(fp, "set terminal pdfcairo enhanced color font 'Sans,10' size %g,%g\n", width, height);
     fprintf(fp, "set output '%s'\n\n", output_pdf);
     
     /* Process each trial */
@@ -355,7 +356,8 @@ static int generate_analog_plot_script(trial_analog_data_t *trials, int n_trials
 
 /* Generate gnuplot script for timeline (-g2) */
 static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_trials,
-                                         const char *tmpdir, const char *output_pdf) {
+                                         const char *tmpdir, const char *output_pdf,
+                                         double width, double height) {
     char script_path[1024];
     char data_path[1024];
     snprintf(script_path, sizeof(script_path), "%s/plot.gp", tmpdir);
@@ -382,7 +384,7 @@ static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_tria
         return -1;
     }
     
-    fprintf(fp, "set terminal pdfcairo enhanced color font 'Sans,12' size 11,8.5\n");
+    fprintf(fp, "set terminal pdfcairo enhanced color font 'Sans,12' size %g,%g\n", width, height);
     fprintf(fp, "set output '%s'\n\n", output_pdf);
     
     fprintf(fp, "set title 'Experiment Timeline' font 'Sans,14'\n");
@@ -439,7 +441,8 @@ static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_tria
 
 /* Main plotting function */
 int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
-                   const char *input_path, const char *output_dir) {
+                   const char *input_path, const char *output_dir,
+                   double width, double height) {
     (void)file;  /* Unused for now */
     
     /* Check gnuplot */
@@ -515,7 +518,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         }
         
         /* Generate gnuplot script */
-        if (generate_analog_plot_script(trial_data, trials->count, tmpdir, output_pdf) != 0) {
+        if (generate_analog_plot_script(trial_data, trials->count, tmpdir, output_pdf, width, height) != 0) {
             ret = -1;
             goto cleanup;
         }
@@ -524,7 +527,7 @@ int run_plot_macro(int macro_id, bhv2_file_t *file, trial_list_t *trials,
         /* -g2: Timeline histogram */
         snprintf(output_pdf, sizeof(output_pdf), "%s/Timeline_%s.pdf", out_dir, stem);
         
-        if (generate_timeline_plot_script(trial_data, trials->count, tmpdir, output_pdf) != 0) {
+        if (generate_timeline_plot_script(trial_data, trials->count, tmpdir, output_pdf, width, height) != 0) {
             ret = -1;
             goto cleanup;
         }

@@ -155,8 +155,15 @@ PRESTO supports powerful trial filtering syntax:
 # Generate timeline histogram
 ./bin/presto -g2 data.bhv2
 
+# Custom plot size (width x height in inches)
+./bin/presto -g1 -s 8x6 data.bhv2
+./bin/presto -g2 -s 14x10 data.bhv2
+
 # Save plots to specific directory
 ./bin/presto -g1 -O results/ data.bhv2
+
+# Combine size and output directory
+./bin/presto -g1 -s 11x8.5 -O results/ data.bhv2
 ```
 
 ### Multiple Files with Output Directory
@@ -340,6 +347,7 @@ Output:
   -o<N>       Text output macro (default: 0)
   -g<N>       Graphical output macro (requires gnuplot)
   -O <dir>    Output directory ('-' for stdout)
+  -s <WxH>    Plot size in inches (default: 11x8.5, e.g., -s 8x6)
   -f          Force overwrite existing files
 
 Info:
@@ -376,6 +384,10 @@ Spec format: N (single), N:M (range), N,M,O (union)
 # Generate plots
 ./bin/presto -g1 data.bhv2
 ./bin/presto -g2 -O results/ data.bhv2
+
+# Custom plot sizes
+./bin/presto -g1 -s 8x6 data.bhv2      # Smaller plot
+./bin/presto -g2 -s 14x10 data.bhv2    # Larger plot
 ```
 
 ---

@@ -8,6 +8,12 @@ All notable changes to presto.c are documented here.
 
 ### Added (main branch)
 
+- **Plot size control** - Add `-s WxH` flag for custom plot dimensions
+  - Specify width and height in inches (e.g., `-s 8x6`, `-s 14x10`)
+  - Default size: 11x8.5 inches (landscape letter)
+  - Applies to both `-g1` (analog plots) and `-g2` (timeline)
+  - Error checking for invalid formats and non-positive dimensions
+
 - **Graphical macros using gnuplot** - Plotting functionality now implemented
   - **Macro 1** (`-g1`) - Analog data plots
     - Multi-page PDF with one trial per page
