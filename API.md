@@ -1,6 +1,6 @@
 # Grab-Style API Reference
 
-This document describes the **grab-style iterator API** for reading BHV2 files in presto-c.
+This document describes the **grab-style iterator API** for reading BHV2 files in presto.c.
 
 The API is inspired by the grab neurophysiology tool (circa 2018) and provides a clean, iterator-based pattern for trial processing.
 
@@ -428,9 +428,9 @@ This API follows grab neurophysiology tool conventions:
 | `Rewind_InputFile()` | `rewind_input_file(file)` | Reset to start |
 
 **Key differences:**
-- Grab uses global state, presto-c passes file handle explicitly
-- Grab uses uppercase (legacy C style), presto-c uses lowercase
-- Presto-c returns trial number from `read_next_trial()`, grab uses separate function
+- Grab uses global state, presto.c passes file handle explicitly
+- Grab uses uppercase (legacy C style), presto.c uses lowercase
+- Presto.c returns trial number from `read_next_trial()`, grab uses separate function
 
 ---
 

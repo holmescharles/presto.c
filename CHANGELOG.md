@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to presto-c are documented here.
+All notable changes to presto.c are documented here.
 
 ---
 

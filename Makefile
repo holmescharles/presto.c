@@ -1,4 +1,4 @@
-# Makefile for presto-c
+# Makefile for presto.c
 # Pure C implementation of presto behavioral data analyzer
 #
 # Targets:

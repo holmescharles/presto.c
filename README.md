@@ -350,7 +350,7 @@ Spec format: N (single), N:M (range), N,M,O (union)
 ### Project Structure
 
 ```
-presto-c/
+presto.c/
 ├── src/              # C source code
 │   ├── bhv2.c/h     # BHV2 parser + grab-style API
 │   ├── presto_*.c/h # Presto implementation

@@ -1,4 +1,4 @@
-# presto-c Code Walkthrough
+# presto.c Code Walkthrough
 
 This document explains how the pure C implementation of bhvq and presto works,
 tracing through the code path for common operations.
@@ -6,7 +6,7 @@ tracing through the code path for common operations.
 ## Project Structure
 
 ```
-~/presto-c/
+~/presto.c/
 ├── Makefile
 ├── bin/
 │   ├── bhvq              # Query tool binary
