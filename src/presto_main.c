@@ -30,7 +30,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include "bhv2.h"
-#include "filter.h"
+#include "skip.h"
 #include "macros.h"
 #include "plot.h"
 
@@ -97,7 +97,7 @@ static void print_macros(void) {
  */
 
 typedef struct {
-    filter_set_t *filters;
+    skip_set_t *skips;
     int output_macro;
     int graph_macro;
     char *output_dir;
@@ -112,7 +112,7 @@ typedef struct {
 } presto_args_t;
 
 static void args_init(presto_args_t *args) {
-    args->filters = filter_set_new();
+    args->skips = skip_set_new();
     args->output_macro = 0;  /* Default to count */
     args->graph_macro = -1;  /* No graph by default */
     args->output_dir = NULL;
@@ -127,7 +127,7 @@ static void args_init(presto_args_t *args) {
 }
 
 static void args_free(presto_args_t *args) {
-    filter_set_free(args->filters);
+    skip_set_free(args->skips);
     free(args->output_dir);
 }
 
@@ -218,7 +218,7 @@ static int parse_args(int argc, char **argv, presto_args_t *args) {
                 return -1;
             }
             
-            if (filter_parse_spec(args->filters, spec, is_include) != 0) {
+            if (skip_parse_spec(args->skips, spec, is_include) != 0) {
                 fprintf(stderr, "Error: Invalid filter spec: %s\n", arg);
                 return -1;
             }
@@ -334,18 +334,18 @@ int main(int argc, char **argv) {
                     .condition = get_trial_condition_from_value(trial_data)
                 };
                 
-                /* Check if trial passes filters */
-                if (filter_check_trial(args.filters, &info)) {
-                    /* Trial passes - add to list */
+                /* Check if trial should be skipped */
+                if (skip_trial(args.skips, &info)) {
+                    /* Trial should be skipped - free it */
+                    bhv2_value_free(trial_data);
+                } else {
+                    /* Trial should be kept - add to list */
                     if (trial_list_add(trials, trial_num, trial_data) < 0) {
                         fprintf(stderr, "Error: Failed to add trial to list\n");
                         bhv2_value_free(trial_data);
                         free(name);
                         break;
                     }
-                } else {
-                    /* Trial doesn't pass - free it */
-                    bhv2_value_free(trial_data);
                 }
             } else {
                 /* Not a trial variable - skip it */

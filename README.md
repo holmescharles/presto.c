@@ -397,7 +397,7 @@ presto.c/
 ├── src/              # C source code
 │   ├── bhv2.c/h     # BHV2 parser + grab-style API
 │   ├── presto_main.c # Main entry point
-│   ├── filter.c/h   # Trial filtering
+│   ├── skip.c/h      # Trial skipping
 │   ├── macros.c/h   # Text output macros
 │   └── plot.c/h     # Graphical output (gnuplot)
 ├── tests/           # Test programs

@@ -25,11 +25,11 @@ BINDIR = bin
 
 # Source files
 BHV2_SRC = $(SRCDIR)/bhv2.c
-PRESTO_SRC = $(SRCDIR)/presto_main.c $(SRCDIR)/filter.c $(SRCDIR)/macros.c $(SRCDIR)/plot.c
+PRESTO_SRC = $(SRCDIR)/presto_main.c $(SRCDIR)/skip.c $(SRCDIR)/macros.c $(SRCDIR)/plot.c
 
 # Object files
 BHV2_OBJ = $(OBJDIR)/bhv2.o
-PRESTO_OBJ = $(OBJDIR)/presto_main.o $(OBJDIR)/filter.o $(OBJDIR)/macros.o $(OBJDIR)/plot.o
+PRESTO_OBJ = $(OBJDIR)/presto_main.o $(OBJDIR)/skip.o $(OBJDIR)/macros.o $(OBJDIR)/plot.o
 
 # Targets
 PRESTO = $(BINDIR)/presto

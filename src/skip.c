@@ -1,46 +1,46 @@
 /*
- * filter.c - Trial filtering implementation
+ * skip.c - Trial skipping implementation
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "filter.h"
+#include "skip.h"
 
 /*
- * Filter set management
+ * Skip set management
  */
 
-filter_set_t* filter_set_new(void) {
-    filter_set_t *fs = malloc(sizeof(filter_set_t));
-    if (!fs) return NULL;
+skip_set_t* skip_set_new(void) {
+    skip_set_t *ss = malloc(sizeof(skip_set_t));
+    if (!ss) return NULL;
     
-    fs->rules = NULL;
-    fs->count = 0;
-    fs->capacity = 0;
-    return fs;
+    ss->rules = NULL;
+    ss->count = 0;
+    ss->capacity = 0;
+    return ss;
 }
 
-void filter_set_free(filter_set_t *fs) {
-    if (!fs) return;
+void skip_set_free(skip_set_t *ss) {
+    if (!ss) return;
     
-    for (size_t i = 0; i < fs->count; i++) {
-        free(fs->rules[i].range.values);
+    for (size_t i = 0; i < ss->count; i++) {
+        free(ss->rules[i].range.values);
     }
-    free(fs->rules);
-    free(fs);
+    free(ss->rules);
+    free(ss);
 }
 
-static int filter_set_add(filter_set_t *fs, filter_rule_t rule) {
-    if (fs->count >= fs->capacity) {
-        size_t new_cap = fs->capacity == 0 ? 8 : fs->capacity * 2;
-        filter_rule_t *new_rules = realloc(fs->rules, new_cap * sizeof(filter_rule_t));
+static int skip_set_add(skip_set_t *ss, skip_rule_t rule) {
+    if (ss->count >= ss->capacity) {
+        size_t new_cap = ss->capacity == 0 ? 8 : ss->capacity * 2;
+        skip_rule_t *new_rules = realloc(ss->rules, new_cap * sizeof(skip_rule_t));
         if (!new_rules) return -1;
-        fs->rules = new_rules;
-        fs->capacity = new_cap;
+        ss->rules = new_rules;
+        ss->capacity = new_cap;
     }
-    fs->rules[fs->count++] = rule;
+    ss->rules[ss->count++] = rule;
     return 0;
 }
 
@@ -48,8 +48,8 @@ static int filter_set_add(filter_set_t *fs, filter_rule_t rule) {
  * Range parsing
  */
 
-filter_range_t filter_parse_range(const char *str) {
-    filter_range_t range = {NULL, 0};
+skip_range_t skip_parse_range(const char *str) {
+    skip_range_t range = {NULL, 0};
     
     if (!str || !*str) return range;
     
@@ -118,7 +118,7 @@ filter_range_t filter_parse_range(const char *str) {
     return range;
 }
 
-void filter_range_free(filter_range_t *range) {
+void skip_range_free(skip_range_t *range) {
     if (range) {
         free(range->values);
         range->values = NULL;
@@ -127,46 +127,46 @@ void filter_range_free(filter_range_t *range) {
 }
 
 /*
- * Filter spec parsing
+ * Skip spec parsing
  */
 
-int filter_parse_spec(filter_set_t *fs, const char *spec, bool is_include) {
-    if (!fs || !spec || !*spec) return -1;
+int skip_parse_spec(skip_set_t *ss, const char *spec, bool is_include) {
+    if (!ss || !spec || !*spec) return -1;
     
-    filter_rule_t rule;
+    skip_rule_t rule;
     rule.include = is_include;
     
     const char *p = spec;
     
     /* Determine type from first character */
     if (*p == 'E') {
-        rule.type = FILTER_ERROR;
+        rule.type = SKIP_BY_ERROR;
         p++;
     } else if (*p == 'c') {
-        rule.type = FILTER_CONDITION;
+        rule.type = SKIP_BY_CONDITION;
         p++;
     } else if (isdigit(*p)) {
-        rule.type = FILTER_TRIAL;
+        rule.type = SKIP_BY_TRIAL;
         /* Don't advance - the number is the range */
     } else {
         return -1;  /* Unknown type */
     }
     
     /* Parse the range */
-    rule.range = filter_parse_range(p);
+    rule.range = skip_parse_range(p);
     if (rule.range.count == 0) {
         return -1;
     }
     
-    return filter_set_add(fs, rule);
+    return skip_set_add(ss, rule);
 }
 
 /*
- * Trial filtering
+ * Trial skipping
  */
 
-bool filter_check_trial(filter_set_t *fs, trial_info_t *info) {
-    if (!fs || fs->count == 0) return true;  /* No filters = include all */
+bool skip_trial(skip_set_t *ss, trial_info_t *info) {
+    if (!ss || ss->count == 0) return false;  /* No rules = skip nothing (keep all) */
     
     /* Track include/exclude state for each type */
     bool has_include_trial = false;
@@ -178,20 +178,20 @@ bool filter_check_trial(filter_set_t *fs, trial_info_t *info) {
     bool passed_include_condition = false;
     
     /* First pass: check excludes and track includes */
-    for (size_t i = 0; i < fs->count; i++) {
-        filter_rule_t *rule = &fs->rules[i];
+    for (size_t i = 0; i < ss->count; i++) {
+        skip_rule_t *rule = &ss->rules[i];
         
         int test_value;
         switch (rule->type) {
-            case FILTER_TRIAL:
+            case SKIP_BY_TRIAL:
                 test_value = info->trial_num;
                 if (rule->include) has_include_trial = true;
                 break;
-            case FILTER_ERROR:
+            case SKIP_BY_ERROR:
                 test_value = info->error_code;
                 if (rule->include) has_include_error = true;
                 break;
-            case FILTER_CONDITION:
+            case SKIP_BY_CONDITION:
                 test_value = info->condition;
                 if (rule->include) has_include_condition = true;
                 break;
@@ -212,24 +212,24 @@ bool filter_check_trial(filter_set_t *fs, trial_info_t *info) {
             /* Include rule - track if this type passed */
             if (in_range) {
                 switch (rule->type) {
-                    case FILTER_TRIAL: passed_include_trial = true; break;
-                    case FILTER_ERROR: passed_include_error = true; break;
-                    case FILTER_CONDITION: passed_include_condition = true; break;
+                    case SKIP_BY_TRIAL: passed_include_trial = true; break;
+                    case SKIP_BY_ERROR: passed_include_error = true; break;
+                    case SKIP_BY_CONDITION: passed_include_condition = true; break;
                 }
             }
         } else {
-            /* Exclude rule - if matched, trial is excluded */
-            if (in_range) return false;
+            /* Exclude rule - if matched, skip this trial */
+            if (in_range) return true;
         }
     }
     
     /* Check include constraints:
      * If there's an include rule for a type, trial must pass at least one */
-    if (has_include_trial && !passed_include_trial) return false;
-    if (has_include_error && !passed_include_error) return false;
-    if (has_include_condition && !passed_include_condition) return false;
+    if (has_include_trial && !passed_include_trial) return true;
+    if (has_include_error && !passed_include_error) return true;
+    if (has_include_condition && !passed_include_condition) return true;
     
-    return true;
+    return false;
 }
 
 /*

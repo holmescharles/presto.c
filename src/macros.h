@@ -6,7 +6,7 @@
 #define PRESTO_MACROS_H
 
 #include "bhv2.h"
-#include "filter.h"
+#include "skip.h"
 
 /*
  * Macro result - text output from a macro

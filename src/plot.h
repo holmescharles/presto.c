@@ -6,7 +6,7 @@
 #define PRESTO_PLOT_H
 
 #include "bhv2.h"
-#include "filter.h"
+#include "skip.h"
 
 /*
  * Run graphical macro

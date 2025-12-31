@@ -1,29 +1,29 @@
 /*
- * presto_filter.h - Trial filtering for presto
+ * skip.h - Trial skipping for presto
  *
- * Implements grab-style filtering syntax:
+ * Implements grab-style skip syntax:
  *   -XE0        Include only error code 0 (correct trials)
  *   -xE1:3      Exclude error codes 1-3
  *   -Xc2:5      Include conditions 2-5
  *   -X1:10      Include trials 1-10
  */
 
-#ifndef PRESTO_FILTER_H
-#define PRESTO_FILTER_H
+#ifndef SKIP_H
+#define SKIP_H
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "bhv2.h"
 
 /*
- * Filter specification types
+ * Skip specification types
  */
 
 typedef enum {
-    FILTER_TRIAL,      /* Trial number */
-    FILTER_ERROR,      /* Error code (TrialError field) */
-    FILTER_CONDITION   /* Condition number */
-} filter_type_t;
+    SKIP_BY_TRIAL,      /* Skip by trial number */
+    SKIP_BY_ERROR,      /* Skip by error code (TrialError field) */
+    SKIP_BY_CONDITION   /* Skip by condition number */
+} skip_type_t;
 
 /*
  * Range specification: single value, range, or union
@@ -32,30 +32,30 @@ typedef enum {
 typedef struct {
     int *values;       /* Array of values to match */
     size_t count;      /* Number of values */
-} filter_range_t;
+} skip_range_t;
 
 /*
- * Single filter rule
+ * Single skip rule
  */
 
 typedef struct {
-    filter_type_t type;
+    skip_type_t type;
     bool include;       /* true = include only, false = exclude */
-    filter_range_t range;
-} filter_rule_t;
+    skip_range_t range;
+} skip_rule_t;
 
 /*
- * Filter set - all rules to apply
+ * Skip set - all rules to apply
  */
 
 typedef struct {
-    filter_rule_t *rules;
+    skip_rule_t *rules;
     size_t count;
     size_t capacity;
-} filter_set_t;
+} skip_set_t;
 
 /*
- * Trial info extracted from BHV2 for filtering
+ * Trial info extracted from BHV2 for skip checking
  */
 
 typedef struct {
@@ -65,46 +65,46 @@ typedef struct {
 } trial_info_t;
 
 /*
- * Filtered trial list (streaming version)
+ * Trial list (streaming version)
  */
 
 typedef struct {
-    int *trial_nums;        /* Array of 1-based trial numbers that passed filter */
+    int *trial_nums;        /* Array of 1-based trial numbers that were not skipped */
     bhv2_value_t **trial_data; /* Actual trial data for macros */
     size_t count;
     size_t capacity;
 } trial_list_t;
 
 /*
- * Filter operations
+ * Skip operations
  */
 
-/* Create empty filter set */
-filter_set_t* filter_set_new(void);
+/* Create empty skip set */
+skip_set_t* skip_set_new(void);
 
-/* Free filter set */
-void filter_set_free(filter_set_t *fs);
+/* Free skip set */
+void skip_set_free(skip_set_t *ss);
 
-/* Parse a filter spec string and add to filter set
+/* Parse a skip spec string and add to skip set
  * spec format: [E|c]<range> where range is N, N:M, or N,M,O
  * is_include: true for -X (include), false for -x (exclude)
  * Returns 0 on success, -1 on error
  */
-int filter_parse_spec(filter_set_t *fs, const char *spec, bool is_include);
+int skip_parse_spec(skip_set_t *ss, const char *spec, bool is_include);
 
 /* Parse a range string into values
  * Handles: "5", "1:10", "1,3,5"
- * Returns filter_range_t with allocated values array
+ * Returns skip_range_t with allocated values array
  */
-filter_range_t filter_parse_range(const char *str);
+skip_range_t skip_parse_range(const char *str);
 
 /* Free range values */
-void filter_range_free(filter_range_t *range);
+void skip_range_free(skip_range_t *range);
 
-/* Check if a trial passes all filters
- * Returns true if trial should be included
+/* Check if a trial should be skipped
+ * Returns true if trial should be skipped (excluded)
  */
-bool filter_check_trial(filter_set_t *fs, trial_info_t *info);
+bool skip_trial(skip_set_t *ss, trial_info_t *info);
 
 /* Create new trial list */
 trial_list_t* trial_list_new(void);
@@ -125,4 +125,4 @@ int get_trial_error_from_value(bhv2_value_t *trial_value);
 /* Get trial condition from trial variable data */
 int get_trial_condition_from_value(bhv2_value_t *trial_value);
 
-#endif /* PRESTO_FILTER_H */
+#endif /* SKIP_H */

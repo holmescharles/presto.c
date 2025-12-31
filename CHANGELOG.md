@@ -6,6 +6,17 @@ All notable changes to presto.c are documented here.
 
 ## [Unreleased]
 
+### Changed (main branch)
+
+- **Refactored filter system to grab-style "skip" naming** - Aligns with grab tool conventions
+  - Renamed `filter.c/.h` → `skip.c/.h`
+  - All types renamed: `filter_*` → `skip_*`
+  - Enum values renamed for consistency: `FILTER_TRIAL` → `SKIP_BY_TRIAL`, etc.
+  - **Semantic inversion**: `skip_trial()` returns `true` = skip (was: `filter_check_trial()` returns `true` = keep)
+  - Matches grab API's `SKIP_DATA` / `WITH_DATA` convention
+  - Updated all call sites and inverted boolean logic
+  - Makes presto maximally grab-like while maintaining clarity
+
 ### Removed (main branch)
 
 - **Removed bhvq stub files** - Cleaned up unimplemented query mode code
@@ -16,7 +27,7 @@ All notable changes to presto.c are documented here.
 ### Changed (main branch)
 
 - **Simplified file naming** - Removed `presto_` prefix from core implementation files
-  - `presto_filter.c/.h` → `filter.c/.h`
+  - `presto_filter.c/.h` → `filter.c/.h` (now `skip.c/.h` as of latest refactor)
   - `presto_macros.c/.h` → `macros.c/.h`
   - `presto_plot.c/.h` → `plot.c/.h`
   - Kept `presto_main.c` as entry point
