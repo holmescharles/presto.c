@@ -1,12 +1,12 @@
 /*
- * presto_plot.h - Gnuplot-based graphical output for presto
+ * plot.h - Gnuplot-based graphical output for presto
  */
 
 #ifndef PRESTO_PLOT_H
 #define PRESTO_PLOT_H
 
 #include "bhv2.h"
-#include "presto_filter.h"
+#include "filter.h"
 
 /*
  * Run graphical macro

@@ -1,5 +1,5 @@
 /*
- * presto_plot.c - Gnuplot-based graphical output
+ * plot.c - Gnuplot-based graphical output
  *
  * Generates PDF plots using gnuplot for:
  *   -g1: Analog data plots (eye, mouse, buttons)
@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <libgen.h>
 #include "bhv2.h"
-#include "presto_filter.h"
-#include "presto_plot.h"
+#include "filter.h"
+#include "plot.h"
 
 /* Data structures for plotting */
 

@@ -285,20 +285,16 @@ See [tests/README.md](tests/README.md) for details.
 
 ## ⚠️ Known Limitations
 
-### Not Yet Implemented
+### Not Planned
 
-- **bhvq query mode** - The jq-like query interface is not yet implemented in C
+- **bhvq query mode** - The jq-like query interface is not planned for the C implementation
   - Use the Python version for query mode: https://github.com/MooshLab/presto
-
-### Workarounds
-
-- For bhvq query functionality, use the Python implementation
 
 ---
 
 ## 🐍 Python Version
 
-A full-featured Python implementation with bhvq query mode and graphical macros is available:
+A full-featured Python implementation with bhvq query mode is available:
 
 **Repository**: https://github.com/MooshLab/presto
 
@@ -400,8 +396,10 @@ Spec format: N (single), N:M (range), N,M,O (union)
 presto.c/
 ├── src/              # C source code
 │   ├── bhv2.c/h     # BHV2 parser + grab-style API
-│   ├── presto_*.c/h # Presto implementation
-│   └── bhvq_*.c/h   # bhvq stubs (incomplete)
+│   ├── presto_main.c # Main entry point
+│   ├── filter.c/h   # Trial filtering
+│   ├── macros.c/h   # Text output macros
+│   └── plot.c/h     # Graphical output (gnuplot)
 ├── tests/           # Test programs
 ├── bin/             # Compiled binaries
 └── obj/             # Object files

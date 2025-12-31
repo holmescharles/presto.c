@@ -1,12 +1,12 @@
 /*
- * presto_macros.h - Text output macros for presto
+ * macros.h - Text output macros for presto
  */
 
 #ifndef PRESTO_MACROS_H
 #define PRESTO_MACROS_H
 
 #include "bhv2.h"
-#include "presto_filter.h"
+#include "filter.h"
 
 /*
  * Macro result - text output from a macro

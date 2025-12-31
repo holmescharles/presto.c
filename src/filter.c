@@ -1,12 +1,12 @@
 /*
- * presto_filter.c - Trial filtering implementation
+ * filter.c - Trial filtering implementation
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "presto_filter.h"
+#include "filter.h"
 
 /*
  * Filter set management

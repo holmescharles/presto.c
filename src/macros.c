@@ -1,5 +1,5 @@
 /*
- * presto_macros.c - Text output macro implementations
+ * macros.c - Text output macro implementations
  */
 
 #define _POSIX_C_SOURCE 200809L  /* For strdup */
@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "presto_macros.h"
+#include "macros.h"
 
 /*
  * Result management

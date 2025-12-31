@@ -10,8 +10,6 @@
 # Test programs (compile manually):
 #   gcc -o test_iterator tests/test_iterator.c obj/bhv2.o -lm
 #   gcc -o debug_vars tests/debug_vars.c obj/bhv2.o -lm
-#
-# Note: bhvq query mode not yet implemented (stubs in src/bhvq_*.c)
 
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -g
@@ -27,28 +25,20 @@ BINDIR = bin
 
 # Source files
 BHV2_SRC = $(SRCDIR)/bhv2.c
-# BHVQ_SRC = $(SRCDIR)/bhvq_main.c $(SRCDIR)/bhvq_query.c $(SRCDIR)/bhvq_json.c  # Disabled
-PRESTO_SRC = $(SRCDIR)/presto_main.c $(SRCDIR)/presto_filter.c $(SRCDIR)/presto_macros.c $(SRCDIR)/presto_plot.c
+PRESTO_SRC = $(SRCDIR)/presto_main.c $(SRCDIR)/filter.c $(SRCDIR)/macros.c $(SRCDIR)/plot.c
 
 # Object files
 BHV2_OBJ = $(OBJDIR)/bhv2.o
-# BHVQ_OBJ = $(OBJDIR)/bhvq_main.o $(OBJDIR)/bhvq_query.o $(OBJDIR)/bhvq_json.o  # Disabled
-PRESTO_OBJ = $(OBJDIR)/presto_main.o $(OBJDIR)/presto_filter.o $(OBJDIR)/presto_macros.o $(OBJDIR)/presto_plot.o
+PRESTO_OBJ = $(OBJDIR)/presto_main.o $(OBJDIR)/filter.o $(OBJDIR)/macros.o $(OBJDIR)/plot.o
 
 # Targets
-# BHVQ = $(BINDIR)/bhvq  # Disabled
 PRESTO = $(BINDIR)/presto
 
 .PHONY: all clean test presto
 
-all: presto  # bhvq disabled
-
-# bhvq: $(BHVQ)  # Disabled
+all: presto
 
 presto: $(PRESTO)
-
-$(BHVQ): $(BHV2_OBJ) $(BHVQ_OBJ) | $(BINDIR)
-	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(PRESTO): $(BHV2_OBJ) $(PRESTO_OBJ) | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CAIRO_LDFLAGS)
@@ -56,8 +46,8 @@ $(PRESTO): $(BHV2_OBJ) $(PRESTO_OBJ) | $(BINDIR)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# Presto plot needs Cairo
-$(OBJDIR)/presto_plot.o: $(SRCDIR)/presto_plot.c | $(OBJDIR)
+# Plot needs Cairo
+$(OBJDIR)/plot.o: $(SRCDIR)/plot.c | $(OBJDIR)
 	$(CC) $(CFLAGS) $(CAIRO_CFLAGS) -c -o $@ $<
 
 $(OBJDIR):

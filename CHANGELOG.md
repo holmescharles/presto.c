@@ -6,6 +6,23 @@ All notable changes to presto.c are documented here.
 
 ## [Unreleased]
 
+### Removed (main branch)
+
+- **Removed bhvq stub files** - Cleaned up unimplemented query mode code
+  - Removed `src/bhvq_main.c`, `src/bhvq_query.c/.h`, `src/bhvq_json.c/.h`
+  - bhvq query mode is not planned for C implementation
+  - Use Python version for jq-like query functionality
+  
+### Changed (main branch)
+
+- **Simplified file naming** - Removed `presto_` prefix from core implementation files
+  - `presto_filter.c/.h` → `filter.c/.h`
+  - `presto_macros.c/.h` → `macros.c/.h`
+  - `presto_plot.c/.h` → `plot.c/.h`
+  - Kept `presto_main.c` as entry point
+  - Updated all includes and Makefile
+  - Cleaner, more focused project structure
+
 ### Added (main branch)
 
 - **Plot size control** - Add `-s WxH` flag for custom plot dimensions
@@ -122,13 +139,17 @@ These fixes enable reading **all BHV2 variables** including Trial1, Trial2, ...,
 - Added `.gitignore` for build artifacts
 - Added documentation files (README.md, API.md, CHANGELOG.md)
 
-### Not Yet Implemented
+### Not Planned
 
-Features from Python version not yet in C version:
+Features from Python version not planned for C version:
 
 - **bhvq query mode** - jq-like query syntax for BHV2 files
-  - Code stubs present in `src/bhvq_*.c` but incomplete
+  - Removed stub code (`src/bhvq_*.c`) to simplify codebase
   - Use Python version for query functionality: https://github.com/MooshLab/presto
+
+### Not Yet Implemented
+
+Features that may be added in future:
 
 - **Plot stdout output** (`-O -` for graphical macros)
   - Requires capturing gnuplot PDF output to buffer
@@ -137,15 +158,17 @@ Features from Python version not yet in C version:
 - **Advanced plot customization**
   - Python version has: `-og` (grid toggle), `-as2` (alignment), `-ob 1,2,4` (button selection)
   - C version auto-detects and plots all available data
+  - C version auto-detects and plots all available data
 
 ### Note
 
 - This C implementation was developed on the `c-port` branch and merged to `main`
 - Graphical macros added to `main` branch
+- bhvq stub files removed to simplify codebase
 - Python implementation available as separate repository
 - Both versions read the same BHV2 format and produce compatible output
 - C version prioritizes speed and minimal dependencies (zero dependencies for text macros, gnuplot for graphical macros)
-- Python version prioritizes feature completeness (bhvq, advanced plotting customization)
+- Python version prioritizes feature completeness (bhvq query mode, advanced plotting customization)
 
 ---
 

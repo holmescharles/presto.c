@@ -30,9 +30,9 @@
 #include <ctype.h>
 #include <getopt.h>
 #include "bhv2.h"
-#include "presto_filter.h"
-#include "presto_macros.h"
-#include "presto_plot.h"
+#include "filter.h"
+#include "macros.h"
+#include "plot.h"
 
 #define PRESTO_VERSION "0.1.0"
 
