@@ -69,7 +69,7 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...) {
  * Run macro by ID - dispatches to individual macro implementations
  */
 
-int run_macro(int macro_id, bhv2_file_t *file, macro_result_t *result) {
+int run_macro(int macro_id, ml_trial_file_t *file, macro_result_t *result) {
     macro_result_init(result);
     
     switch (macro_id) {

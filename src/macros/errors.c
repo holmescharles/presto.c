@@ -4,7 +4,7 @@
 
 #include "../macros.h"
 
-int macro_errors(bhv2_file_t *file, macro_result_t *result) {
+int macro_errors(ml_trial_file_t *file, macro_result_t *result) {
     /* Count error codes (MonkeyLogic uses 0-9) */
     int error_counts[10] = {0};
     int total = 0;

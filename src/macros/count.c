@@ -4,7 +4,7 @@
 
 #include "../macros.h"
 
-int macro_count(bhv2_file_t *file, macro_result_t *result) {
+int macro_count(ml_trial_file_t *file, macro_result_t *result) {
     int count = 0;
     
     while (read_next_trial(file, SKIP_DATA) > 0) {

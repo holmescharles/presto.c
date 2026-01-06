@@ -99,7 +99,7 @@ static void cleanup_temp_dir(const char *tmpdir) {
 }
 
 /* Extract analog data from a trial using accessor functions and trial data */
-static int extract_trial_analog_data(bhv2_file_t *file, trial_analog_data_t *out) {
+static int extract_trial_analog_data(ml_trial_file_t *file, trial_analog_data_t *out) {
     memset(out, 0, sizeof(trial_analog_data_t));
     
     /* Get trial metadata from accessor functions */
@@ -437,7 +437,7 @@ static int generate_timeline_plot_script(trial_analog_data_t *trials, int n_tria
 }
 
 /* Main plotting function - iterates trials using read_next_trial() */
-int run_plot_macro(int macro_id, bhv2_file_t *file,
+int run_plot_macro(int macro_id, ml_trial_file_t *file,
                    const char *input_path, const char *output_dir,
                    double width, double height) {
     

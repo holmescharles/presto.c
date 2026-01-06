@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <sys/stat.h>
-#include "bhv2.h"
+#include "ml_trial.h"
 #include "skip.h"
 #include "macros.h"
 #include "macros/plot.h"
@@ -431,7 +431,7 @@ int main(int argc, char **argv) {
         }
         
         /* Open BHV2 file with streaming API */
-        bhv2_file_t *file = bhv2_open_stream(filepath);
+        ml_trial_file_t *file = open_input_file(filepath);
         if (!file) {
             fprintf(stderr, "Error: Failed to open %s: %s\n", display_name, bhv2_error_detail);
             status = 1;
@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
         }
         
         /* Set skip rules - macros will iterate trials themselves */
-        bhv2_set_skips(file, args.skips);
+        ml_set_skips(file, args.skips);
         
         /* Run the appropriate macro */
         if (args.graph_macro >= 0) {
@@ -493,7 +493,7 @@ int main(int argc, char **argv) {
             }
         }
         
-        bhv2_file_free(file);
+        close_input_file(file);
     }
     
     /* Clean up stdin temp file if used */

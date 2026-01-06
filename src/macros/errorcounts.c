@@ -4,7 +4,7 @@
 
 #include "../macros.h"
 
-int macro_errorcounts(bhv2_file_t *file, macro_result_t *result) {
+int macro_errorcounts(ml_trial_file_t *file, macro_result_t *result) {
     /* Build a map of condition -> error code -> count */
     /* For simplicity, use fixed arrays (assume max 100 conditions, 10 error codes) */
     #define MAX_COND 100

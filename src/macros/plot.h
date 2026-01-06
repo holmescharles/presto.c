@@ -5,7 +5,7 @@
 #ifndef PRESTO_PLOT_H
 #define PRESTO_PLOT_H
 
-#include "../bhv2.h"
+#include "../ml_trial.h"
 
 /*
  * Run graphical macro
@@ -19,7 +19,7 @@
  * 
  * Returns: 0 on success, -1 on error
  */
-int run_plot_macro(int macro_id, bhv2_file_t *file,
+int run_plot_macro(int macro_id, ml_trial_file_t *file,
                    const char *input_path, const char *output_dir,
                    double width, double height);
 

@@ -5,7 +5,7 @@
 
 #include "../macros.h"
 
-int macro_scenes(bhv2_file_t *file, macro_result_t *result) {
+int macro_scenes(ml_trial_file_t *file, macro_result_t *result) {
     /* Read first trial to examine scene structure */
     int trial_num = read_next_trial(file, WITH_DATA);
     if (trial_num <= 0) {

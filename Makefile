@@ -26,6 +26,7 @@ MACRODIR = $(SRCDIR)/macros
 
 # Source files
 BHV2_SRC = $(SRCDIR)/bhv2.c
+ML_TRIAL_SRC = $(SRCDIR)/ml_trial.c
 PRESTO_SRC = $(SRCDIR)/main.c $(SRCDIR)/skip.c $(SRCDIR)/macros.c
 
 # Macro implementation files (in src/macros/)
@@ -39,6 +40,7 @@ MACRO_SRC = $(MACRODIR)/count.c \
 
 # Object files
 BHV2_OBJ = $(OBJDIR)/bhv2.o
+ML_TRIAL_OBJ = $(OBJDIR)/ml_trial.o
 PRESTO_OBJ = $(OBJDIR)/main.o $(OBJDIR)/skip.o $(OBJDIR)/macros.o
 MACRO_OBJ = $(OBJDIR)/macro_count.o \
             $(OBJDIR)/macro_behavior.o \
@@ -57,7 +59,7 @@ all: presto
 
 presto: $(PRESTO)
 
-$(PRESTO): $(BHV2_OBJ) $(PRESTO_OBJ) $(MACRO_OBJ) | $(BINDIR)
+$(PRESTO): $(BHV2_OBJ) $(ML_TRIAL_OBJ) $(PRESTO_OBJ) $(MACRO_OBJ) | $(BINDIR)
 	$(CC) -o $@ $^ $(LDFLAGS) $(CAIRO_LDFLAGS)
 
 # Core source files

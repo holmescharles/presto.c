@@ -8,7 +8,7 @@
 #ifndef PRESTO_MACROS_H
 #define PRESTO_MACROS_H
 
-#include "bhv2.h"
+#include "ml_trial.h"
 
 /*
  * Macro result - text output from a macro
@@ -41,7 +41,7 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...);
  * Run a macro by ID
  * Returns 0 on success, -1 on error (unknown macro)
  */
-int run_macro(int macro_id, bhv2_file_t *file, macro_result_t *result);
+int run_macro(int macro_id, ml_trial_file_t *file, macro_result_t *result);
 
 /*
  * Individual macros (implementations in src/macros/)
@@ -49,21 +49,21 @@ int run_macro(int macro_id, bhv2_file_t *file, macro_result_t *result);
  */
 
 /* Macro 0: Count trials */
-int macro_count(bhv2_file_t *file, macro_result_t *result);
+int macro_count(ml_trial_file_t *file, macro_result_t *result);
 
 /* Macro 1: Behavior summary */
-int macro_behavior(bhv2_file_t *file, macro_result_t *result);
+int macro_behavior(ml_trial_file_t *file, macro_result_t *result);
 
 /* Macro 2: Error code breakdown */
-int macro_errors(bhv2_file_t *file, macro_result_t *result);
+int macro_errors(ml_trial_file_t *file, macro_result_t *result);
 
 /* Macro 3: Scene structure */
-int macro_scenes(bhv2_file_t *file, macro_result_t *result);
+int macro_scenes(ml_trial_file_t *file, macro_result_t *result);
 
 /* Macro 4: Analog data info */
-int macro_analog(bhv2_file_t *file, macro_result_t *result);
+int macro_analog(ml_trial_file_t *file, macro_result_t *result);
 
 /* Macro 5: Error counts per condition */
-int macro_errorcounts(bhv2_file_t *file, macro_result_t *result);
+int macro_errorcounts(ml_trial_file_t *file, macro_result_t *result);
 
 #endif /* PRESTO_MACROS_H */

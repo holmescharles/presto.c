@@ -4,7 +4,7 @@
 
 #include "../macros.h"
 
-int macro_analog(bhv2_file_t *file, macro_result_t *result) {
+int macro_analog(ml_trial_file_t *file, macro_result_t *result) {
     /* Read first trial to examine analog structure */
     int trial_num = read_next_trial(file, WITH_DATA);
     if (trial_num <= 0) {

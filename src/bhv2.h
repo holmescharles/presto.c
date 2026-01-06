@@ -98,12 +98,6 @@ typedef struct {
 } bhv2_variable_t;
 
 /*
- * Forward declarations
- */
-
-typedef struct skip_set skip_set_t;  /* Defined in skip.h */
-
-/*
  * File - collection of top-level variables (streaming mode)
  */
 
@@ -113,17 +107,6 @@ typedef struct {
     off_t file_size;         /* Total file size */
     off_t current_pos;       /* Current read position */
     bool at_variable_data;   /* Are we positioned at variable data? */
-    
-    /* Skip filtering (set via bhv2_set_skips) */
-    skip_set_t *skips;           /* Skip rules for read_next_trial() */
-    
-    /* Current trial state (populated by read_next_trial) */
-    int current_trial_num;       /* Trial number (1-based) */
-    int current_trial_error;     /* TrialError code */
-    int current_trial_condition; /* Condition number */
-    int current_trial_block;     /* BlockNumber */
-    bhv2_value_t *current_trial_data;  /* Full trial struct (NULL if SKIP_DATA) */
-    bool has_current_trial;      /* True if current trial is valid */
 } bhv2_file_t;
 
 /*
@@ -191,6 +174,12 @@ int bhv2_read_next_variable_name(bhv2_file_t *file, char **name_out);
  */
 bhv2_value_t* bhv2_read_variable_data(bhv2_file_t *file);
 
+/* Read variable data selectively (only specified struct fields)
+ * wanted_fields: NULL-terminated array of field names to read
+ * Caller must free returned value with bhv2_value_free()
+ */
+bhv2_value_t* bhv2_read_variable_data_selective(bhv2_file_t *file, const char **wanted_fields);
+
 /* Skip variable data (after reading name) */
 int bhv2_skip_variable_data(bhv2_file_t *file);
 
@@ -198,44 +187,6 @@ int bhv2_skip_variable_data(bhv2_file_t *file);
  * Caller must free with bhv2_variable_free()
  */
 bhv2_variable_t* bhv2_read_next_variable(bhv2_file_t *file);
-
-/*
- * grab-style Trial Iterator API
- */
-
-/* Constants for read_next_trial() */
-#define WITH_DATA 0
-#define SKIP_DATA 1
-
-/* Open BHV2 file (grab-style naming) */
-bhv2_file_t* open_input_file(const char *path);
-
-/* Close file and free resources */
-void close_input_file(bhv2_file_t *file);
-
-/* Reset file position to beginning */
-void rewind_input_file(bhv2_file_t *file);
-
-/* Set skip rules for trial filtering (used by read_next_trial) */
-void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips);
-
-/* Read next trial (returns trial number, 0 on EOF, negative on error)
- * skip_data_flag: WITH_DATA or SKIP_DATA
- * Populates current trial state accessible via trial_*() functions
- */
-int read_next_trial(bhv2_file_t *file, int skip_data_flag);
-
-/* Skip current trial's data (if positioned at data) */
-void skip_over_data(bhv2_file_t *file);
-
-/* Trial accessor functions (grab-style)
- * These return values from the current trial loaded by read_next_trial()
- */
-int trial_number(bhv2_file_t *file);
-int trial_error(bhv2_file_t *file);
-int trial_condition(bhv2_file_t *file);
-int trial_block(bhv2_file_t *file);
-bhv2_value_t* trial_data(bhv2_file_t *file);
 
 /*
  * Value accessor helpers
@@ -262,21 +213,5 @@ uint64_t bhv2_sub2ind(bhv2_value_t *value, uint64_t *indices, uint64_t n_indices
 
 /* Convert 0-based linear index to 1-based MATLAB indices */
 void bhv2_ind2sub(bhv2_value_t *value, uint64_t index, uint64_t *indices);
-
-/*
- * Value accessor helpers
- */
-
-/* Get field from struct value at given element index */
-bhv2_value_t* bhv2_struct_get(bhv2_value_t *value, const char *field, uint64_t index);
-
-/* Get cell from cell array at given index */
-bhv2_value_t* bhv2_cell_get(bhv2_value_t *value, uint64_t index);
-
-/* Get numeric value as double (auto-converts types) */
-double bhv2_get_double(bhv2_value_t *value, uint64_t index);
-
-/* Get string value (for char arrays) */
-const char* bhv2_get_string(bhv2_value_t *value);
 
 #endif /* BHV2_H */
