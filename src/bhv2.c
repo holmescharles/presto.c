@@ -1045,7 +1045,7 @@ static void extract_trial_info(bhv2_file_t *file, bhv2_value_t *trial_value) {
     file->current_trial_condition = cond_val ? (int)bhv2_get_double(cond_val, 0) : -1;
     
     /* Extract BlockNumber */
-    bhv2_value_t *block_val = bhv2_struct_get(trial_value, "BlockNumber", 0);
+    bhv2_value_t *block_val = bhv2_struct_get(trial_value, "Block", 0);
     file->current_trial_block = block_val ? (int)bhv2_get_double(block_val, 0) : -1;
 }
 
@@ -1099,7 +1099,7 @@ void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips) {
 
 /* Fields needed for trial metadata (filtering and accessors) */
 static const char *trial_metadata_fields[] = {
-    "TrialError", "Condition", "BlockNumber", NULL
+    "TrialError", "Condition", "Block", NULL
 };
 
 /* Read next trial (returns trial number, 0 on EOF, negative on error)
@@ -1142,7 +1142,8 @@ int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
                 trial_info_t info = {
                     .trial_num = trial_num,
                     .error_code = file->current_trial_error,
-                    .condition = file->current_trial_condition
+                    .condition = file->current_trial_condition,
+                    .block = file->current_trial_block
                 };
                 if (skip_trial(file->skips, &info)) {
                     /* Skip this trial - free data and continue */

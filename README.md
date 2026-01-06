@@ -79,8 +79,11 @@ PRESTO supports powerful trial filtering syntax:
 # Include only trials 1-10
 ./bin/presto -X1:10 -o1 data.bhv2
 
-# Combine filters (correct trials in conditions 2-5)
-./bin/presto -XE0 -Xc2:5 -o1 data.bhv2
+# Include only Block 3
+./bin/presto -XB3 -o1 data.bhv2
+
+# Combine filters (correct trials in conditions 2-5 from Block 3)
+./bin/presto -XE0 -Xc2:5 -XB3 -o1 data.bhv2
 ```
 
 **Filter syntax:**
@@ -88,6 +91,8 @@ PRESTO supports powerful trial filtering syntax:
 - `-xE<spec>` - Exclude error codes
 - `-Xc<spec>` - Include only conditions
 - `-xc<spec>` - Exclude conditions
+- `-XB<spec>` - Include only blocks
+- `-xB<spec>` - Exclude blocks
 - `-X<spec>` - Include only trials
 - `-x<spec>` - Exclude trials
 

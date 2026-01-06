@@ -66,6 +66,8 @@ static void print_usage(const char *prog) {
     fprintf(stderr, "  -xE<spec>   Exclude error codes\n");
     fprintf(stderr, "  -Xc<spec>   Include only conditions\n");
     fprintf(stderr, "  -xc<spec>   Exclude conditions\n");
+    fprintf(stderr, "  -XB<spec>   Include only blocks (e.g., -XB3, -XB2:4)\n");
+    fprintf(stderr, "  -xB<spec>   Exclude blocks\n");
     fprintf(stderr, "  -X<spec>    Include only trials (e.g., -X1:10)\n");
     fprintf(stderr, "  -x<spec>    Exclude trials\n");
     fprintf(stderr, "\nOutput:\n");

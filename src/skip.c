@@ -145,6 +145,9 @@ int skip_parse_spec(skip_set_t *ss, const char *spec, bool is_include) {
     } else if (*p == 'c') {
         rule.type = SKIP_BY_CONDITION;
         p++;
+    } else if (*p == 'B') {
+        rule.type = SKIP_BY_BLOCK;
+        p++;
     } else if (isdigit(*p)) {
         rule.type = SKIP_BY_TRIAL;
         /* Don't advance - the number is the range */
@@ -172,10 +175,12 @@ bool skip_trial(skip_set_t *ss, trial_info_t *info) {
     bool has_include_trial = false;
     bool has_include_error = false;
     bool has_include_condition = false;
+    bool has_include_block = false;
     
     bool passed_include_trial = false;
     bool passed_include_error = false;
     bool passed_include_condition = false;
+    bool passed_include_block = false;
     
     /* First pass: check excludes and track includes */
     for (size_t i = 0; i < ss->count; i++) {
@@ -194,6 +199,10 @@ bool skip_trial(skip_set_t *ss, trial_info_t *info) {
             case SKIP_BY_CONDITION:
                 test_value = info->condition;
                 if (rule->include) has_include_condition = true;
+                break;
+            case SKIP_BY_BLOCK:
+                test_value = info->block;
+                if (rule->include) has_include_block = true;
                 break;
             default:
                 continue;
@@ -215,6 +224,7 @@ bool skip_trial(skip_set_t *ss, trial_info_t *info) {
                     case SKIP_BY_TRIAL: passed_include_trial = true; break;
                     case SKIP_BY_ERROR: passed_include_error = true; break;
                     case SKIP_BY_CONDITION: passed_include_condition = true; break;
+                    case SKIP_BY_BLOCK: passed_include_block = true; break;
                 }
             }
         } else {
@@ -228,6 +238,7 @@ bool skip_trial(skip_set_t *ss, trial_info_t *info) {
     if (has_include_trial && !passed_include_trial) return true;
     if (has_include_error && !passed_include_error) return true;
     if (has_include_condition && !passed_include_condition) return true;
+    if (has_include_block && !passed_include_block) return true;
     
     return false;
 }

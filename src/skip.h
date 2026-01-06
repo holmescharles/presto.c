@@ -22,7 +22,8 @@
 typedef enum {
     SKIP_BY_TRIAL,      /* Skip by trial number */
     SKIP_BY_ERROR,      /* Skip by error code (TrialError field) */
-    SKIP_BY_CONDITION   /* Skip by condition number */
+    SKIP_BY_CONDITION,  /* Skip by condition number */
+    SKIP_BY_BLOCK       /* Skip by block number (Block field) */
 } skip_type_t;
 
 /*
@@ -62,6 +63,7 @@ typedef struct {
     int trial_num;      /* 1-based trial number */
     int error_code;     /* TrialError value */
     int condition;      /* Condition number */
+    int block;          /* Block number (Block field) */
 } trial_info_t;
 
 /*
