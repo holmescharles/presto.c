@@ -221,21 +221,21 @@ void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips);
 
 /* Read next trial (returns trial number, 0 on EOF, negative on error)
  * skip_data_flag: WITH_DATA or SKIP_DATA
- * Populates current trial state accessible via *_header() functions
+ * Populates current trial state accessible via trial_*() functions
  */
 int read_next_trial(bhv2_file_t *file, int skip_data_flag);
 
 /* Skip current trial's data (if positioned at data) */
 void skip_over_data(bhv2_file_t *file);
 
-/* Trial accessor functions (grab-style *_header pattern)
+/* Trial accessor functions (grab-style)
  * These return values from the current trial loaded by read_next_trial()
  */
-int trial_number_header(bhv2_file_t *file);
-int trial_error_header(bhv2_file_t *file);
-int condition_header(bhv2_file_t *file);
-int block_number_header(bhv2_file_t *file);
-bhv2_value_t* trial_data_header(bhv2_file_t *file);
+int trial_number(bhv2_file_t *file);
+int trial_error(bhv2_file_t *file);
+int trial_condition(bhv2_file_t *file);
+int trial_block(bhv2_file_t *file);
+bhv2_value_t* trial_data(bhv2_file_t *file);
 
 /*
  * Value accessor helpers

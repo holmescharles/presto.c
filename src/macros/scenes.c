@@ -13,7 +13,7 @@ int macro_scenes(bhv2_file_t *file, macro_result_t *result) {
         return 0;
     }
     
-    bhv2_value_t *trial_value = trial_data_header(file);
+    bhv2_value_t *trial_value = trial_data(file);
 
     /* Get ObjectStatusRecord */
     bhv2_value_t *osr = bhv2_struct_get(trial_value, "ObjectStatusRecord", 0);

@@ -98,18 +98,18 @@ static void cleanup_temp_dir(const char *tmpdir) {
     int ret __attribute__((unused)) = system(cmd);  /* Best-effort cleanup */
 }
 
-/* Extract analog data from a trial using header functions and trial data */
+/* Extract analog data from a trial using accessor functions and trial data */
 static int extract_trial_analog_data(bhv2_file_t *file, trial_analog_data_t *out) {
     memset(out, 0, sizeof(trial_analog_data_t));
     
-    /* Get trial metadata from header functions */
-    out->trial_num = trial_number_header(file);
-    out->error_code = trial_error_header(file);
-    out->condition = condition_header(file);
-    out->block = block_number_header(file);
+    /* Get trial metadata from accessor functions */
+    out->trial_num = trial_number(file);
+    out->error_code = trial_error(file);
+    out->condition = trial_condition(file);
+    out->block = trial_block(file);
     
     /* Get trial data struct */
-    bhv2_value_t *trial_value = trial_data_header(file);
+    bhv2_value_t *trial_value = trial_data(file);
     if (!trial_value) {
         return 0;  /* No data */
     }

@@ -13,8 +13,8 @@ int macro_errorcounts(bhv2_file_t *file, macro_result_t *result) {
     int max_cond = -1;
     
     while (read_next_trial(file, SKIP_DATA) > 0) {
-        int cond = condition_header(file);
-        int error = trial_error_header(file);
+        int cond = trial_condition(file);
+        int error = trial_error(file);
         
         if (cond >= 0 && cond < MAX_COND && error >= 0 && error < 10) {
             counts[cond][error]++;

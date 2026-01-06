@@ -524,6 +524,93 @@ static bhv2_value_t* read_struct_array_posix(int file_descriptor, uint64_t ndims
     return value;
 }
 
+/*
+ * Read struct array selectively - only read specified fields, skip the rest.
+ * wanted_fields is a NULL-terminated array of field names to read.
+ * Other fields are skipped (not allocated).
+ */
+static bhv2_value_t* read_struct_selective_posix(int file_descriptor, uint64_t ndims, uint64_t *dims,
+                                                  const char **wanted_fields) {
+    bhv2_value_t *value = bhv2_value_new(MATLAB_STRUCT, ndims, dims);
+    if (!value) return NULL;
+    
+    /* Read field count */
+    uint64_t n_fields;
+    if (read_uint64_posix(file_descriptor, &n_fields) < 0) {
+        bhv2_value_free(value);
+        return NULL;
+    }
+    
+    value->data.struct_array.n_fields = n_fields;
+    
+    /* Allocate field storage: n_elements * n_fields */
+    uint64_t total_fields = value->total * n_fields;
+    value->data.struct_array.fields = (bhv2_struct_field_t*)calloc(total_fields, sizeof(bhv2_struct_field_t));
+    if (!value->data.struct_array.fields) {
+        bhv2_value_free(value);
+        set_error(BHV2_ERR_MEMORY, "Failed to allocate struct fields");
+        return NULL;
+    }
+    
+    /* Read each element's fields */
+    for (uint64_t elem = 0; elem < value->total; elem++) {
+        for (uint64_t f = 0; f < n_fields; f++) {
+            uint64_t idx = elem * n_fields + f;
+            
+            /* Read field name */
+            uint64_t name_len;
+            if (read_uint64_posix(file_descriptor, &name_len) < 0) {
+                bhv2_value_free(value);
+                return NULL;
+            }
+            
+            if (name_len > BHV2_MAX_NAME_LENGTH) {
+                bhv2_value_free(value);
+                set_error(BHV2_ERR_FORMAT, "Field name too long");
+                return NULL;
+            }
+            
+            char *field_name = read_string_posix(file_descriptor, name_len);
+            if (!field_name) {
+                bhv2_value_free(value);
+                return NULL;
+            }
+            
+            /* Check if this field is wanted */
+            bool wanted = false;
+            if (wanted_fields) {
+                for (const char **w = wanted_fields; *w; w++) {
+                    if (strcmp(field_name, *w) == 0) {
+                        wanted = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (wanted) {
+                /* Store name and read value */
+                value->data.struct_array.fields[idx].name = field_name;
+                value->data.struct_array.fields[idx].value = bhv2_read_value_posix(file_descriptor);
+                if (!value->data.struct_array.fields[idx].value) {
+                    bhv2_value_free(value);
+                    return NULL;
+                }
+            } else {
+                /* Skip this field - don't store name or value */
+                free(field_name);
+                value->data.struct_array.fields[idx].name = NULL;
+                value->data.struct_array.fields[idx].value = NULL;
+                if (bhv2_skip_value_posix(file_descriptor) < 0) {
+                    bhv2_value_free(value);
+                    return NULL;
+                }
+            }
+        }
+    }
+    
+    return value;
+}
+
 static bhv2_value_t* read_cell_array_posix(int file_descriptor, uint64_t ndims, uint64_t *dims) {
     bhv2_value_t *value = bhv2_value_new(MATLAB_CELL, ndims, dims);
     if (!value) return NULL;
@@ -747,6 +834,83 @@ bhv2_value_t* bhv2_read_variable_data(bhv2_file_t *file) {
     return value;
 }
 
+/*
+ * Read variable data selectively - only read specified struct fields.
+ * For trial variables, this reads metadata (TrialError, Condition, etc.)
+ * while skipping bulk data (AnalogData, ObjectStatusRecord, etc.)
+ */
+static bhv2_value_t* bhv2_read_variable_data_selective(bhv2_file_t *file, const char **wanted_fields) {
+    if (!file || !file->at_variable_data) {
+        set_error(BHV2_ERR_FORMAT, "Not positioned at variable data");
+        return NULL;
+    }
+    
+    int fd = file->file_descriptor;
+    
+    /* Read dtype */
+    uint64_t dtype_len;
+    if (read_uint64_posix(fd, &dtype_len) < 0) {
+        return NULL;
+    }
+    
+    if (dtype_len > BHV2_MAX_TYPE_LENGTH) {
+        set_error(BHV2_ERR_FORMAT, "Type name too long");
+        return NULL;
+    }
+    
+    char *dtype_string = read_string_posix(fd, dtype_len);
+    if (!dtype_string) {
+        return NULL;
+    }
+    
+    matlab_dtype_t dtype = matlab_dtype_from_string(dtype_string);
+    free(dtype_string);
+    
+    if (dtype == MATLAB_UNKNOWN) {
+        set_error(BHV2_ERR_FORMAT, "Unknown dtype");
+        return NULL;
+    }
+    
+    /* Read dimensions */
+    uint64_t ndims;
+    if (read_uint64_posix(fd, &ndims) < 0) {
+        return NULL;
+    }
+    
+    if (ndims > BHV2_MAX_NDIMS) {
+        set_error(BHV2_ERR_FORMAT, "Too many dimensions");
+        return NULL;
+    }
+    
+    uint64_t *dims = malloc(ndims * sizeof(uint64_t));
+    if (!dims) {
+        set_error(BHV2_ERR_MEMORY, "Failed to allocate dims");
+        return NULL;
+    }
+    
+    if (read(fd, dims, ndims * sizeof(uint64_t)) != (ssize_t)(ndims * sizeof(uint64_t))) {
+        free(dims);
+        set_error(BHV2_ERR_IO, "Failed to read dims");
+        return NULL;
+    }
+    
+    /* For structs, use selective reader; otherwise fall back to full read */
+    bhv2_value_t *value;
+    if (dtype == MATLAB_STRUCT) {
+        value = read_struct_selective_posix(fd, ndims, dims, wanted_fields);
+    } else {
+        /* Non-struct: read fully (shouldn't happen for trials) */
+        value = read_array_data_posix(fd, dtype, ndims, dims);
+    }
+    
+    free(dims);
+    
+    file->at_variable_data = false;
+    file->current_pos = lseek(fd, 0, SEEK_CUR);
+    
+    return value;
+}
+
 int bhv2_skip_variable_data(bhv2_file_t *file) {
     if (!file || !file->at_variable_data) {
         set_error(BHV2_ERR_FORMAT, "Not positioned at variable data");
@@ -811,6 +975,10 @@ bhv2_value_t* bhv2_struct_get(bhv2_value_t *value, const char *field, uint64_t i
     uint64_t base = index * n_fields;
     
     for (uint64_t f = 0; f < n_fields; f++) {
+        /* Skip fields with NULL names (sparse/selective read) */
+        if (value->data.struct_array.fields[base + f].name == NULL) {
+            continue;
+        }
         if (strcmp(value->data.struct_array.fields[base + f].name, field) == 0) {
             return value->data.struct_array.fields[base + f].value;
         }
@@ -929,8 +1097,16 @@ void bhv2_set_skips(bhv2_file_t *file, skip_set_t *skips) {
     }
 }
 
+/* Fields needed for trial metadata (filtering and accessors) */
+static const char *trial_metadata_fields[] = {
+    "TrialError", "Condition", "BlockNumber", NULL
+};
+
 /* Read next trial (returns trial number, 0 on EOF, negative on error)
  * Automatically skips trials that match the skip rules (grab-style).
+ * 
+ * SKIP_DATA mode: Only reads metadata fields, skips bulk data (AnalogData, etc.)
+ * WITH_DATA mode: Reads entire trial structure
  */
 int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
     if (!file) return -1;
@@ -946,8 +1122,15 @@ int read_next_trial(bhv2_file_t *file, int skip_data_flag) {
             int trial_num = atoi(name + 5);
             free(name);
             
-            /* Always read data to get trial info for filtering */
-            bhv2_value_t *trial_data = bhv2_read_variable_data(file);
+            /* Read trial data - selectively for SKIP_DATA, fully for WITH_DATA */
+            bhv2_value_t *trial_data;
+            if (skip_data_flag == SKIP_DATA) {
+                /* Only read metadata fields, skip bulk data */
+                trial_data = bhv2_read_variable_data_selective(file, trial_metadata_fields);
+            } else {
+                /* Read everything */
+                trial_data = bhv2_read_variable_data(file);
+            }
             if (!trial_data) return -1;
             
             /* Extract trial info */
@@ -999,22 +1182,22 @@ void skip_over_data(bhv2_file_t *file) {
 }
 
 /* Trial accessor functions */
-int trial_number_header(bhv2_file_t *file) {
+int trial_number(bhv2_file_t *file) {
     return file ? file->current_trial_num : 0;
 }
 
-int trial_error_header(bhv2_file_t *file) {
+int trial_error(bhv2_file_t *file) {
     return file ? file->current_trial_error : -1;
 }
 
-int condition_header(bhv2_file_t *file) {
+int trial_condition(bhv2_file_t *file) {
     return file ? file->current_trial_condition : -1;
 }
 
-int block_number_header(bhv2_file_t *file) {
+int trial_block(bhv2_file_t *file) {
     return file ? file->current_trial_block : -1;
 }
 
-bhv2_value_t* trial_data_header(bhv2_file_t *file) {
+bhv2_value_t* trial_data(bhv2_file_t *file) {
     return file ? file->current_trial_data : NULL;
 }

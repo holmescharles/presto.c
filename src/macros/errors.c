@@ -10,7 +10,7 @@ int macro_errors(bhv2_file_t *file, macro_result_t *result) {
     int total = 0;
 
     while (read_next_trial(file, SKIP_DATA) > 0) {
-        int error = trial_error_header(file);
+        int error = trial_error(file);
         if (error >= 0 && error < 10) {
             error_counts[error]++;
         }

@@ -12,7 +12,7 @@ int macro_analog(bhv2_file_t *file, macro_result_t *result) {
         return 0;
     }
     
-    bhv2_value_t *trial_value = trial_data_header(file);
+    bhv2_value_t *trial_value = trial_data(file);
 
     /* Get AnalogData */
     bhv2_value_t *analog = bhv2_struct_get(trial_value, "AnalogData", 0);
