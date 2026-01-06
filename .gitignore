@@ -9,6 +9,9 @@ obj/
 test_iterator
 debug_vars
 
+# Output files
+*.pdf
+
 # Editor/OS
 *.swp
 *~
