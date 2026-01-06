@@ -114,9 +114,70 @@ This handoff constraint justifies choices that might seem suboptimal for experie
 **Root Cause Analysis:**
 When reading BHV2 structs selectively, some fields are not populated (left NULL). The old code assumed all field names existed before calling `strcmp()`, causing NULL pointer dereference when fields were skipped.
 
+### 4. BHV2/MonkeyLogic Architecture Separation (Commit: 1afca28)
+
+**Goal**: Separate generic BHV2 format parsing from MonkeyLogic domain semantics
+
+**Problem**: The BHV2 parser (`bhv2.{h,c}`) contained MonkeyLogic-specific knowledge about trials, error codes, conditions, and blocks. This violated separation of concerns - a MATLAB file format parser shouldn't know about behavioral experiment semantics.
+
+**Solution**: Created a new MonkeyLogic wrapper layer (`ml_trial.{h,c}`) that sits between applications and the BHV2 parser.
+
+**New Architecture**:
+```
+Application Layer (main.c, macros/*.c)
+         ↓
+MonkeyLogic Layer (ml_trial.{h,c}) ← skip.{h,c} (ML-specific filtering)
+         ↓
+BHV2 Format Parser (bhv2.{h,c}) (domain-agnostic MATLAB reader)
+```
+
+**Key Changes:**
+
+**Created ml_trial.{h,c}** - MonkeyLogic domain wrapper:
+- `ml_trial_file_t` struct - wraps `bhv2_file_t` with ML-specific state
+- Understands "Trial1", "Trial2" variable naming convention
+- Extracts MonkeyLogic fields: "TrialError", "Condition", "Block"
+- Implements grab-style trial iteration API:
+  - `open_input_file()`, `close_input_file()`, `rewind_input_file()`
+  - `read_next_trial()` - iterates trials, applies skip filters
+  - `trial_number()`, `trial_error()`, `trial_condition()`, `trial_block()`, `trial_data()`
+- Integrates with skip system for trial filtering
+
+**Cleaned bhv2.{h,c}** - Now pure format parser:
+- **Removed** entire trial API (~176 lines of code)
+- **Removed** trial state from `bhv2_file_t` struct (9 fields removed)
+- **Removed** MonkeyLogic field knowledge
+- **Exposed** `bhv2_read_variable_data_selective()` (was static)
+- Now only understands MATLAB file format, nothing about trials or experiments
+
+**Updated all consumers**:
+- `main.c`: Use `open_input_file()` instead of `bhv2_open_stream()`
+- `macros.{h,c}`: Changed from `bhv2_file_t*` to `ml_trial_file_t*`
+- All macro files: Updated function signatures
+- `plot.{h,c}`: Updated to use `ml_trial_file_t*`
+- `Makefile`: Added `ml_trial.o` to build
+
+**Testing Results** (✅ All passed):
+```bash
+./bin/presto -o0 /data/limbs/data/bhv2/251013_Subject04_free_reach.bhv2
+# → 767 trials
+
+./bin/presto -XE0 -o0 /data/limbs/data/bhv2/251013_Subject04_free_reach.bhv2
+# → 451 trials (correct trials only)
+
+./bin/presto -o1 /data/limbs/data/bhv2/251013_Subject04_free_reach.bhv2
+# → Behavior summary with error breakdown
+```
+
+**Benefits**:
+1. **Reusability**: BHV2 parser can now be used for any MATLAB file format
+2. **Clarity**: Domain knowledge clearly separated from format parsing
+3. **Maintainability**: MonkeyLogic semantics isolated to single module
+4. **Testability**: Each layer can be tested independently
+
 ### Git Status
 
-- ✅ Both commits successfully pushed to `origin/main`
+- ✅ Architecture refactoring committed and pushed to `origin/main`
 - ✅ Repository state: Clean working directory
 - ✅ All changes synced with GitHub
 
@@ -127,6 +188,7 @@ presto/
 ├── src/
 │   ├── bhv2.c/h     # BHV2 parser + grab-style API
 │   ├── main.c       # Main entry point (CLI argument parsing)
+│   ├── ml_trial.c/h # MonkeyLogic trial wrapper (domain layer)
 │   ├── skip.c/h     # Trial skipping/filtering system
 │   ├── macros.c/h   # Text output macros (-o0 through -o5)
 │   └── plot.c/h     # Graphical output macros (-g1, -g2)
@@ -388,5 +450,5 @@ ls -la src/                     # List source files
 
 ---
 
-*Last updated: 2026-01-05*
-*Session: Filter→Skip refactor + main.c rename + segfault fix + function renames + design philosophy clarification*
+*Last updated: 2026-01-06*
+*Session: BHV2/MonkeyLogic architecture separation + domain layer refactoring*
