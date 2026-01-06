@@ -19,9 +19,10 @@
 #include "bhv2.h"
 #include "skip.h"
 
-/*
- * MonkeyLogic trial file handle
+/************************************************************/
+/* MonkeyLogic trial file handle
  */
+/************************************************************/
 
 typedef struct {
     bhv2_file_t *bhv2_file;          /* Generic BHV2 format parser */
@@ -36,16 +37,18 @@ typedef struct {
     bool has_current;                /* True if current trial is valid */
 } ml_trial_file_t;
 
-/*
- * Constants for read_next_trial()
+/************************************************************/
+/* Constants for read_next_trial()
  */
+/************************************************************/
 
 #define WITH_DATA 0
 #define SKIP_DATA 1
 
-/*
- * Grab-style API
+/************************************************************/
+/* Grab-style API
  */
+/************************************************************/
 
 /* Open MonkeyLogic BHV2 file (grab-style naming) */
 ml_trial_file_t* open_input_file(const char *path);
@@ -57,7 +60,7 @@ void close_input_file(ml_trial_file_t *file);
 void rewind_input_file(ml_trial_file_t *file);
 
 /* Set skip rules for trial filtering */
-void ml_set_skips(ml_trial_file_t *file, skip_set_t *skips);
+void set_skips(ml_trial_file_t *file, skip_set_t *skips);
 
 /* Read next trial (returns trial number, 0 on EOF, negative on error)
  * skip_data_flag: WITH_DATA or SKIP_DATA

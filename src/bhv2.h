@@ -13,18 +13,20 @@
 #include <stdbool.h>
 #include <sys/types.h>  /* for off_t */
 
-/*
- * Constants
+/************************************************************/
+/* Constants
  */
+/************************************************************/
 
 #define BHV2_MAX_NAME_LENGTH   10000
 #define BHV2_MAX_TYPE_LENGTH   100
 #define BHV2_MAX_NDIMS         100
 #define BHV2_MAX_FIELDS        1000
 
-/*
- * Data types
+/************************************************************/
+/* Data types
  */
+/************************************************************/
 
 typedef enum {
     MATLAB_DOUBLE,
@@ -44,9 +46,10 @@ typedef enum {
     MATLAB_UNKNOWN
 } matlab_dtype_t;
 
-/*
- * Value - tagged union for all possible values
+/************************************************************/
+/* Value - tagged union for all possible values
  */
+/************************************************************/
 
 typedef struct bhv2_value bhv2_value_t;
 typedef struct bhv2_struct_field bhv2_struct_field_t;
@@ -87,9 +90,10 @@ struct bhv2_value {
     } data;
 };
 
-/*
- * Variable - named value with file position info
+/************************************************************/
+/* Variable - named value with file position info
  */
+/************************************************************/
 
 typedef struct {
     char *name;
@@ -97,9 +101,10 @@ typedef struct {
     long file_pos;          /* Position in file (for lazy loading) */
 } bhv2_variable_t;
 
-/*
- * File - collection of top-level variables (streaming mode)
+/************************************************************/
+/* File - collection of top-level variables (streaming mode)
  */
+/************************************************************/
 
 typedef struct {
     char *path;
@@ -109,9 +114,10 @@ typedef struct {
     bool at_variable_data;   /* Are we positioned at variable data? */
 } bhv2_file_t;
 
-/*
- * Error handling
+/************************************************************/
+/* Error handling
  */
+/************************************************************/
 
 typedef enum {
     BHV2_OK = 0,
@@ -128,9 +134,10 @@ const char* bhv2_strerror(bhv2_error_t err);
 extern bhv2_error_t bhv2_last_error;
 extern char bhv2_error_detail[256];
 
-/*
- * Type utilities
+/************************************************************/
+/* Type utilities
  */
+/************************************************************/
 
 /* Convert dtype string to enum */
 matlab_dtype_t matlab_dtype_from_string(const char *string);
@@ -141,9 +148,10 @@ const char* matlab_dtype_to_string(matlab_dtype_t dtype);
 /* Get element size in bytes (0 for struct/cell) */
 size_t matlab_dtype_size(matlab_dtype_t dtype);
 
-/*
- * Memory management
+/************************************************************/
+/* Memory management
  */
+/************************************************************/
 
 /* Allocate a new value */
 bhv2_value_t* bhv2_value_new(matlab_dtype_t dtype, uint64_t ndims, uint64_t *dims);
@@ -157,9 +165,10 @@ void bhv2_variable_free(bhv2_variable_t *variable);
 /* Free a file struct */
 void bhv2_file_free(bhv2_file_t *file);
 
-/*
- * Streaming API - for memory-efficient reading
+/************************************************************/
+/* Streaming API - for memory-efficient reading
  */
+/************************************************************/
 
 /* Open BHV2 file for streaming */
 bhv2_file_t* bhv2_open_stream(const char *path);
@@ -188,9 +197,10 @@ int bhv2_skip_variable_data(bhv2_file_t *file);
  */
 bhv2_variable_t* bhv2_read_next_variable(bhv2_file_t *file);
 
-/*
- * Value accessor helpers
+/************************************************************/
+/* Value accessor helpers
  */
+/************************************************************/
 
 /* Navigate into a struct value by field name */
 bhv2_value_t* bhv2_struct_get(bhv2_value_t *value, const char *field, uint64_t index);
@@ -204,9 +214,10 @@ double bhv2_get_double(bhv2_value_t *value, uint64_t index);
 /* Get string value (returns NULL if not char array) */
 const char* bhv2_get_string(bhv2_value_t *value);
 
-/*
- * Index conversion (MATLAB column-major to linear)
+/************************************************************/
+/* Index conversion (MATLAB column-major to linear)
  */
+/************************************************************/
 
 /* Convert 1-based MATLAB indices to 0-based linear index */
 uint64_t bhv2_sub2ind(bhv2_value_t *value, uint64_t *indices, uint64_t n_indices);

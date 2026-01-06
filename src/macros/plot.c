@@ -1,10 +1,11 @@
-/*
- * plot.c - Gnuplot-based graphical output
+/************************************************************/
+/* plot.c - Gnuplot-based graphical output
  *
  * Generates PDF plots using gnuplot for:
  *   -g1: Analog data plots (eye, mouse, buttons)
  *   -g2: Timeline histogram (trials over time)
  */
+/************************************************************/
 
 #define _POSIX_C_SOURCE 200809L
 

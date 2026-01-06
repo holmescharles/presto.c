@@ -15,9 +15,10 @@
 #include <stdbool.h>
 #include "bhv2.h"
 
-/*
- * Skip specification types
+/************************************************************/
+/* Skip specification types
  */
+/************************************************************/
 
 typedef enum {
     SKIP_BY_TRIAL,      /* Skip by trial number */
@@ -26,18 +27,20 @@ typedef enum {
     SKIP_BY_BLOCK       /* Skip by block number (Block field) */
 } skip_type_t;
 
-/*
- * Range specification: single value, range, or union
+/************************************************************/
+/* Range specification: single value, range, or union
  */
+/************************************************************/
 
 typedef struct {
     int *values;       /* Array of values to match */
     size_t count;      /* Number of values */
 } skip_range_t;
 
-/*
- * Single skip rule
+/************************************************************/
+/* Single skip rule
  */
+/************************************************************/
 
 typedef struct {
     skip_type_t type;
@@ -45,9 +48,10 @@ typedef struct {
     skip_range_t range;
 } skip_rule_t;
 
-/*
- * Skip set - all rules to apply
+/************************************************************/
+/* Skip set - all rules to apply
  */
+/************************************************************/
 
 typedef struct skip_set {
     skip_rule_t *rules;
@@ -55,9 +59,10 @@ typedef struct skip_set {
     size_t capacity;
 } skip_set_t;
 
-/*
- * Trial info extracted from BHV2 for skip checking
+/************************************************************/
+/* Trial info extracted from BHV2 for skip checking
  */
+/************************************************************/
 
 typedef struct {
     int trial_num;      /* 1-based trial number */
@@ -66,9 +71,10 @@ typedef struct {
     int block;          /* Block number (Block field) */
 } trial_info_t;
 
-/*
- * Skip operations
+/************************************************************/
+/* Skip operations
  */
+/************************************************************/
 
 /* Create empty skip set */
 skip_set_t* skip_set_new(void);
@@ -97,9 +103,10 @@ void skip_range_free(skip_range_t *range);
  */
 bool skip_trial(skip_set_t *ss, trial_info_t *info);
 
-/*
- * Utility functions for extracting trial info from BHV2 values
+/************************************************************/
+/* Utility functions for extracting trial info from BHV2 values
  */
+/************************************************************/
 
 /* Get trial error code from trial variable data */
 int get_trial_error_from_value(bhv2_value_t *trial_value);

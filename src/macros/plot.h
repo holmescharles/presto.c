@@ -1,14 +1,15 @@
-/*
- * plot.h - Gnuplot-based graphical output for presto
+/************************************************************/
+/* plot.h - Gnuplot-based graphical output for presto
  */
+/************************************************************/
 
 #ifndef PRESTO_PLOT_H
 #define PRESTO_PLOT_H
 
 #include "../ml_trial.h"
 
-/*
- * Run graphical macro
+/************************************************************/
+/* Run graphical macro
  * 
  * macro_id: 1 = analog data plots, 2 = timeline histogram
  * file: BHV2 file handle (with skips already set via bhv2_set_skips)
@@ -19,6 +20,7 @@
  * 
  * Returns: 0 on success, -1 on error
  */
+/************************************************************/
 int run_plot_macro(int macro_id, ml_trial_file_t *file,
                    const char *input_path, const char *output_dir,
                    double width, double height);

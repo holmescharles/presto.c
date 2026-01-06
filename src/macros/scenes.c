@@ -1,7 +1,8 @@
-/*
- * scenes.c - Macro 3: Scene structure
+/************************************************************/
+/* scenes.c - Macro 3: Scene structure
  * Shows the scene hierarchy from the first trial
  */
+/************************************************************/
 
 #include "../macros.h"
 

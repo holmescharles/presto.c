@@ -16,9 +16,10 @@
 #include <unistd.h>   /* lseek, close */
 #include <sys/stat.h> /* fstat */
 
-/*
- * Global error state
+/************************************************************/
+/* Global error state
  */
+/************************************************************/
 
 bhv2_error_t bhv2_last_error = BHV2_OK;
 char bhv2_error_detail[256] = {0};
@@ -44,9 +45,10 @@ static void set_error(bhv2_error_t err, const char *detail) {
     }
 }
 
-/*
- * POSIX I/O helpers
+/************************************************************/
+/* POSIX I/O helpers
  */
+/************************************************************/
 
 static int read_uint64_posix(int file_descriptor, uint64_t *value) {
     if (read(file_descriptor, value, 8) != 8) {
@@ -79,9 +81,10 @@ static void skip_bytes_posix(int file_descriptor, size_t count) {
     lseek(file_descriptor, count, SEEK_CUR);
 }
 
-/*
- * Type utilities
+/************************************************************/
+/* Type utilities
  */
+/************************************************************/
 
 matlab_dtype_t matlab_dtype_from_string(const char *string) {
     if (strcmp(string, "double") == 0)  return MATLAB_DOUBLE;
@@ -139,9 +142,10 @@ size_t matlab_dtype_size(matlab_dtype_t dtype) {
     }
 }
 
-/*
- * Value allocation and deallocation
+/************************************************************/
+/* Value allocation and deallocation
  */
+/************************************************************/
 
 bhv2_value_t* bhv2_value_new(matlab_dtype_t dtype, uint64_t ndims, uint64_t *dims) {
     bhv2_value_t *value = calloc(1, sizeof(bhv2_value_t));
@@ -229,9 +233,10 @@ void bhv2_file_free(bhv2_file_t *file) {
     free(file);
 }
 
-/*
- * POSIX-based value reading (streaming)
+/************************************************************/
+/* POSIX-based value reading (streaming)
  */
+/************************************************************/
 
 static bhv2_value_t* read_numeric_array_posix(int file_descriptor, matlab_dtype_t dtype, uint64_t ndims, uint64_t *dims);
 static bhv2_value_t* read_char_array_posix(int file_descriptor, uint64_t ndims, uint64_t *dims);
@@ -524,11 +529,12 @@ static bhv2_value_t* read_struct_array_posix(int file_descriptor, uint64_t ndims
     return value;
 }
 
-/*
- * Read struct array selectively - only read specified fields, skip the rest.
+/************************************************************/
+/* Read struct array selectively - only read specified fields, skip the rest.
  * wanted_fields is a NULL-terminated array of field names to read.
  * Other fields are skipped (not allocated).
  */
+/************************************************************/
 static bhv2_value_t* read_struct_selective_posix(int file_descriptor, uint64_t ndims, uint64_t *dims,
                                                   const char **wanted_fields) {
     bhv2_value_t *value = bhv2_value_new(MATLAB_STRUCT, ndims, dims);
@@ -739,9 +745,10 @@ static bhv2_value_t* read_array_data_posix(int file_descriptor, matlab_dtype_t d
     }
 }
 
-/*
- * Streaming implementation
+/************************************************************/
+/* Streaming implementation
  */
+/************************************************************/
 
 bhv2_file_t* bhv2_open_stream(const char *path) {
     int file_descriptor = open(path, O_RDONLY);
@@ -834,11 +841,12 @@ bhv2_value_t* bhv2_read_variable_data(bhv2_file_t *file) {
     return value;
 }
 
-/*
- * Read variable data selectively - only read specified struct fields.
+/************************************************************/
+/* Read variable data selectively - only read specified struct fields.
  * For trial variables, this reads metadata (TrialError, Condition, etc.)
  * while skipping bulk data (AnalogData, ObjectStatusRecord, etc.)
  */
+/************************************************************/
 bhv2_value_t* bhv2_read_variable_data_selective(bhv2_file_t *file, const char **wanted_fields) {
     if (!file || !file->at_variable_data) {
         set_error(BHV2_ERR_FORMAT, "Not positioned at variable data");
@@ -956,9 +964,10 @@ bhv2_variable_t* bhv2_read_next_variable(bhv2_file_t *file) {
     return variable;
 }
 
-/*
- * Value accessor helpers
+/************************************************************/
+/* Value accessor helpers
  */
+/************************************************************/
 
 bhv2_value_t* bhv2_struct_get(bhv2_value_t *value, const char *field, uint64_t index) {
     if (!value || value->dtype != MATLAB_STRUCT) {

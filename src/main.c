@@ -37,9 +37,10 @@
 
 #define PRESTO_VERSION "0.1.0"
 
-/*
- * Macro registry
+/************************************************************/
+/* Macro registry
  */
+/************************************************************/
 
 typedef struct {
     int id;
@@ -94,11 +95,12 @@ static void print_macros(void) {
     printf("  -g2  Plot timeline (PDF)\n");
 }
 
-/*
- * Buffer stdin to a temp file for seeking
+/************************************************************/
+/* Buffer stdin to a temp file for seeking
  * Returns path to temp file (caller must free and unlink)
  * Returns NULL on error
  */
+/************************************************************/
 static char* buffer_stdin_to_tempfile(void) {
     char *tmppath = strdup("/tmp/presto_stdin_XXXXXX");
     int fd = mkstemp(tmppath);
@@ -138,11 +140,12 @@ static char* buffer_stdin_to_tempfile(void) {
     return tmppath;
 }
 
-/*
- * Build output filename for text macro results
+/************************************************************/
+/* Build output filename for text macro results
  * Input: "/path/to/sample_10_errors.bhv2", macro_id=0
  * Output: "sample_10_errors.o0.txt" (caller must free)
  */
+/************************************************************/
 static char* make_output_filename(const char *input_path, int macro_id) {
     /* Get basename */
     char *path_copy = strdup(input_path);
@@ -162,10 +165,11 @@ static char* make_output_filename(const char *input_path, int macro_id) {
     return output;
 }
 
-/*
- * Write text result to file
+/************************************************************/
+/* Write text result to file
  * Returns 0 on success, -1 on error
  */
+/************************************************************/
 static int write_result_to_file(const char *dir, const char *filename, const char *text) {
     /* Build full path */
     size_t path_len = strlen(dir) + 1 + strlen(filename) + 1;
@@ -196,10 +200,11 @@ static int write_result_to_file(const char *dir, const char *filename, const cha
     return 0;
 }
 
-/*
- * Parse filter arguments from argv
+/************************************************************/
+/* Parse filter arguments from argv
  * Returns index of first non-option argument (file)
  */
+/************************************************************/
 
 typedef struct {
     skip_set_t *skips;
@@ -352,9 +357,10 @@ static int parse_args(int argc, char **argv, presto_args_t *args) {
     return 0;
 }
 
-/*
- * Main
+/************************************************************/
+/* Main
  */
+/************************************************************/
 
 int main(int argc, char **argv) {
     presto_args_t args;
@@ -439,7 +445,7 @@ int main(int argc, char **argv) {
         }
         
         /* Set skip rules - macros will iterate trials themselves */
-        ml_set_skips(file, args.skips);
+        set_skips(file, args.skips);
         
         /* Run the appropriate macro */
         if (args.graph_macro >= 0) {

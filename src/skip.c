@@ -8,9 +8,10 @@
 #include <ctype.h>
 #include "skip.h"
 
-/*
- * Skip set management
+/************************************************************/
+/* Skip set management
  */
+/************************************************************/
 
 skip_set_t* skip_set_new(void) {
     skip_set_t *ss = malloc(sizeof(skip_set_t));
@@ -44,9 +45,10 @@ static int skip_set_add(skip_set_t *ss, skip_rule_t rule) {
     return 0;
 }
 
-/*
- * Range parsing
+/************************************************************/
+/* Range parsing
  */
+/************************************************************/
 
 skip_range_t skip_parse_range(const char *str) {
     skip_range_t range = {NULL, 0};
@@ -126,9 +128,10 @@ void skip_range_free(skip_range_t *range) {
     }
 }
 
-/*
- * Skip spec parsing
+/************************************************************/
+/* Skip spec parsing
  */
+/************************************************************/
 
 int skip_parse_spec(skip_set_t *ss, const char *spec, bool is_include) {
     if (!ss || !spec || !*spec) return -1;
@@ -164,9 +167,10 @@ int skip_parse_spec(skip_set_t *ss, const char *spec, bool is_include) {
     return skip_set_add(ss, rule);
 }
 
-/*
- * Trial skipping
+/************************************************************/
+/* Trial skipping
  */
+/************************************************************/
 
 bool skip_trial(skip_set_t *ss, trial_info_t *info) {
     if (!ss || ss->count == 0) return false;  /* No rules = skip nothing (keep all) */
@@ -243,9 +247,10 @@ bool skip_trial(skip_set_t *ss, trial_info_t *info) {
     return false;
 }
 
-/*
- * Trial info extraction from BHV2 (streaming version)
+/************************************************************/
+/* Trial info extraction from BHV2 (streaming version)
  */
+/************************************************************/
 
 int get_trial_error_from_value(bhv2_value_t *trial_value) {
     if (!trial_value || trial_value->dtype != MATLAB_STRUCT) return -1;

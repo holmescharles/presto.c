@@ -1,6 +1,7 @@
-/*
- * behavior.c - Macro 1: Behavior summary
+/************************************************************/
+/* behavior.c - Macro 1: Behavior summary
  */
+/************************************************************/
 
 #include "../macros.h"
 

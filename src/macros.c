@@ -10,9 +10,10 @@
 #include <stdarg.h>
 #include "macros.h"
 
-/*
- * Result management
+/************************************************************/
+/* Result management
  */
+/************************************************************/
 
 void macro_result_init(macro_result_t *result) {
     result->text = NULL;
@@ -65,9 +66,10 @@ void macro_result_appendf(macro_result_t *result, const char *fmt, ...) {
     macro_result_append(result, buf);
 }
 
-/*
- * Run macro by ID - dispatches to individual macro implementations
+/************************************************************/
+/* Run macro by ID - dispatches to individual macro implementations
  */
+/************************************************************/
 
 int run_macro(int macro_id, ml_trial_file_t *file, macro_result_t *result) {
     macro_result_init(result);

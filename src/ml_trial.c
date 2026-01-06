@@ -16,9 +16,10 @@ static const char *trial_metadata_fields[] = {
     "TrialError", "Condition", "Block", NULL
 };
 
-/*
- * Helper functions
+/************************************************************/
+/* Helper functions
  */
+/************************************************************/
 
 /* Extract MonkeyLogic metadata from a trial variable */
 static void extract_trial_info(ml_trial_file_t *file, bhv2_value_t *trial_value) {
@@ -53,9 +54,10 @@ static void clear_trial_state(ml_trial_file_t *file) {
     file->has_current = false;
 }
 
-/*
- * Public API
+/************************************************************/
+/* Public API
  */
+/************************************************************/
 
 /* Open MonkeyLogic BHV2 file */
 ml_trial_file_t* open_input_file(const char *path) {
@@ -95,7 +97,7 @@ void rewind_input_file(ml_trial_file_t *file) {
 }
 
 /* Set skip rules for trial filtering */
-void ml_set_skips(ml_trial_file_t *file, skip_set_t *skips) {
+void set_skips(ml_trial_file_t *file, skip_set_t *skips) {
     if (file) {
         file->skips = skips;
     }

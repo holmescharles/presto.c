@@ -1,6 +1,7 @@
-/*
- * errorcounts.c - Macro 5: Error counts per condition
+/************************************************************/
+/* errorcounts.c - Macro 5: Error counts per condition
  */
+/************************************************************/
 
 #include "../macros.h"
 
